@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Linaje - Agrícola Moncopulli</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; min-height: 100vh; background: #f4f7f6; }
+        .sidebar { width: 250px; flex-shrink: 0; display: flex; flex-direction: column; padding: 20px; color: white; background: #0f4a29; }
+        .sidebar-header { margin-bottom: 40px; }
+        .sidebar-header h2 { font-size: 1.2rem; }
+        .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
+        .avatar { display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 50%; background: #5c8d73; font-weight: bold; }
+        .menu-links { flex-grow: 1; list-style: none; }
+        .menu-links li { margin-bottom: 15px; }
+        .menu-links a { display: block; padding: 10px; border-radius: 5px; color: white; text-decoration: none; }
+        .menu-links a:hover, .menu-links a.active { background: #1a6b3d; }
+        .logout { margin-top: auto; }
+        .main-content { display: flex; flex: 1; min-width: 0; flex-direction: column; padding: 30px; overflow-y: auto; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+        .status { display: flex; align-items: center; gap: 5px; color: #2e7d32; font-weight: bold; }
+        .status::before { width: 10px; height: 10px; border-radius: 50%; background: #2e7d32; content: ""; }
+        .page-title { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .page-title h1 { color: #333; font-size: 1.8rem; }
+        .back-icon { color: #888; font-size: 1.5rem; font-weight: bold; text-decoration: none; }
+        .verification-card { width: 100%; max-width: 800px; margin: 0 auto; padding: 40px; border-radius: 10px; background: white; box-shadow: 0 4px 10px rgb(0 0 0 / 5%); }
+        .verification-card h2 { margin-bottom: 10px; color: #333; text-align: center; }
+        .desc { margin-bottom: 40px; color: #666; font-size: .95rem; text-align: center; }
+        .compare-container { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 40px; }
+        .box { flex: 1; padding: 25px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; text-align: center; }
+        .box h3 { margin-bottom: 15px; color: #555; font-size: 1.1rem; }
+        .box .icon { margin-bottom: 15px; font-size: 3rem; }
+        .id-display { min-height: 48px; padding: 12px; border: 1px dashed #0f4a29; border-radius: 5px; color: #0f4a29; background: #e8f5e9; font-size: 1.2rem; font-weight: bold; }
+        .id-input { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; font-size: 1.2rem; font-weight: bold; text-align: center; }
+        .vs-divider { padding: 10px; border-radius: 50%; color: #aaa; background: white; box-shadow: 0 2px 5px rgb(0 0 0 / 10%); font-size: 1.5rem; font-weight: bold; }
+        .btn-validate { width: 100%; padding: 15px; border: 0; border-radius: 5px; color: white; background: #1a4a2c; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        .alert { margin-top: 30px; padding: 20px; border-radius: 8px; text-align: center; font-size: 1.1rem; font-weight: bold; }
+        .alert.success { border: 1px solid #c8e6c9; color: #2e7d32; background: #e8f5e9; }
+        .alert.danger { border: 1px solid #ffcdd2; color: #c62828; background: #ffebee; }
+        @media (max-width: 760px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; }
+            .user-info { margin-bottom: 18px; }
+            .menu-links { display: flex; flex-wrap: wrap; gap: 4px; }
+            .menu-links li { margin: 0; }
+            .main-content { padding: 18px; }
+            .verification-card { padding: 22px; }
+            .compare-container { align-items: stretch; flex-direction: column; }
+            .vs-divider { align-self: center; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>Agrícola Moncopulli</h2><small>S.A.</small></div>
+        <div class="user-info"><div class="avatar">U</div><div><p><strong>Usuario</strong></p><small>Predio sin asignar</small></div></div>
+        <p style="font-size:.8rem;margin-bottom:10px;color:#a1c2af">ACCESOS DIRECTOS</p>
+        <ul class="menu-links">
+            <li><a href="{% url 'gestor_biologica_monco:inicio' %}">Inicio</a></li>
+            <li><a class="active" href="{% url 'gestor_biologica_monco:linaje' %}">Linaje Sanguíneo</a></li>
+            <li><a href="{% url 'gestor_biologica_monco:historial' %}">Historial Inseminación</a></li>
+        </ul>
+        <div class="logout"><ul class="menu-links"><li><a href="{% url 'gestor_biologica_monco:login' %}">Cerrar Sesión</a></li></ul></div>
+    </aside>
+    <main class="main-content">
+        <header class="header-top"><div class="status">Sistema Sincronizado</div><div>Usuario - Predio sin asignar</div></header>
+        <div class="page-title"><a href="{% url 'gestor_biologica_monco:linaje' %}" class="back-icon" aria-label="Volver a linaje">←</a><h1>Validación de Compatibilidad</h1></div>
+        <section class="verification-card">
+            <h2>Análisis de Consanguinidad</h2>
+            <p class="desc">El sistema consultará los datos genealógicos de ambos registros para detectar vínculos familiares.</p>
+            <div class="compare-container">
+                <div class="box"><div class="icon">🐄</div><h3>ID Vaca Madre</h3><div class="id-display">{{ bovino.codigo_rfid|default:"—" }}</div></div>
+                <div class="vs-divider">VS</div>
+                <div class="box"><div class="icon">🧪</div><h3>ID Pajuela de Semen</h3><input type="text" id="pajuela-input" class="id-input" placeholder="Ingrese el ID de la pajuela" aria-label="ID Pajuela de Semen"></div>
+            </div>
+            <button type="button" class="btn-validate">Verificar Compatibilidad de Linaje</button>
+            <div id="resultado-exito" class="alert success" hidden>Validación exitosa: el resultado aparecerá aquí.</div>
+            <div id="resultado-peligro" class="alert danger" hidden>Resultado de consanguinidad: se mostrará aquí.</div>
+        </section>
+    </main>
+</body>
+</html>

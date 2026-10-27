@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Agrícola Moncopulli</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; min-height: 100vh; background: #f4f7f6; }
+        .login-side { display: flex; width: 35%; min-width: 340px; justify-content: center; align-items: center; padding: 40px; }
+        .login-container { width: 100%; max-width: 380px; }
+        .login-card { padding: 35px 30px; border: 1px solid rgb(0 0 0 / 5%); border-radius: 12px; background: white; box-shadow: 0 8px 24px rgb(0 0 0 / 6%); }
+        .login-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; text-align: center; }
+        .logo-placeholder { display: flex; align-items: center; margin-bottom: 15px; color: #d32f2f; font-size: 1.3rem; font-weight: bold; }
+        .logo-placeholder span { display: inline-block; width: 12px; height: 12px; margin-right: 5px; background: #d32f2f; }
+        .login-header h1 { color: #0f4a29; font-size: 1.8rem; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
+        .form-group label { margin-bottom: 8px; color: #333; font-size: .85rem; font-weight: 600; }
+        .input-container { position: relative; display: flex; align-items: center; }
+        .input-container input { width: 100%; padding: 12px 15px 12px 40px; border: 1px solid #ccc; border-radius: 6px; font-size: .95rem; }
+        .input-icon { position: absolute; left: 14px; color: #888; }
+        .recovery-link { margin-bottom: 20px; text-align: center; }
+        .recovery-link a { color: #555; font-size: .85rem; text-decoration: none; }
+        .btn-submit { width: 100%; padding: 14px; border: 0; border-radius: 6px; color: white; background: #0f4a29; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .decor-side { position: relative; display: flex; width: 65%; flex-direction: column; justify-content: flex-end; padding: 50px; overflow: hidden; background: linear-gradient(180deg, #8bc7e8 0%, #b8dca0 52%, #659342 53%, #315a32 100%); }
+        .decor-side::before, .decor-side::after { position: absolute; right: -5%; bottom: 0; left: -5%; height: 38%; border-radius: 50% 50% 0 0; background: #739c47; content: ""; }
+        .decor-side::after { right: 30%; height: 27%; background: #47733a; }
+        .farm-badge { position: absolute; z-index: 1; top: 40px; right: 40px; padding: 8px 16px; border-radius: 20px; color: #0f4a29; background: rgb(255 255 255 / 90%); font-size: .85rem; font-weight: 700; }
+        .decor-text { position: relative; z-index: 1; max-width: 600px; color: white; text-shadow: 0 2px 4px rgb(0 0 0 / 40%); }
+        .decor-text h2 { margin-bottom: 10px; font-size: 2.2rem; }
+        .decor-text p { color: #e0f2f1; font-size: 1.1rem; line-height: 1.5; }
+        @media (max-width: 760px) {
+            .login-side { width: 100%; min-width: 0; padding: 24px; }
+            .decor-side { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <main class="login-side">
+        <div class="login-container">
+            <section class="login-card">
+                <header class="login-header"><div class="logo-placeholder"><span></span>nacap</div><h1>Iniciar Sesión</h1></header>
+                <form>
+                    <div class="form-group">
+                        <label for="rut">RUT</label>
+                        <div class="input-container"><span class="input-icon">👤</span><input type="text" id="rut" name="rut" placeholder="Ej. 12.345.678-9" autocomplete="username"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <div class="input-container"><span class="input-icon">🔒</span><input type="password" id="password" name="password" placeholder="Contraseña" autocomplete="current-password"></div>
+                    </div>
+                    <div class="recovery-link"><a href="#">¿Olvidaste tu contraseña?</a></div>
+                    <button type="button" class="btn-submit">Iniciar Sesión</button>
+                </form>
+            </section>
+        </div>
+    </main>
+    <aside class="decor-side">
+        <div class="farm-badge">📍 Agrícola Moncopulli S.A.</div>
+        <div class="decor-text"><h2>Gestión de la Consanguinidad Bovino</h2><p>Monitoreo preventivo, árbol genealógico y control de linaje offline para la seguridad y sustentabilidad del plantel maternal.</p></div>
+    </aside>
+</body>
+</html>

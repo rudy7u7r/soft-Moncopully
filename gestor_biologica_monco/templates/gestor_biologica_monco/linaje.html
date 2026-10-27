@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Linaje - Agrícola Moncopulli</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; min-height: 100vh; background: #f4f7f6; }
+        .sidebar { width: 250px; flex-shrink: 0; display: flex; flex-direction: column; padding: 20px; color: white; background: #0f4a29; }
+        .sidebar-header { margin-bottom: 40px; }
+        .sidebar-header h2 { font-size: 1.2rem; }
+        .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
+        .avatar { display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 50%; background: #5c8d73; font-weight: bold; }
+        .menu-links { flex-grow: 1; list-style: none; }
+        .menu-links li { margin-bottom: 15px; }
+        .menu-links a { display: block; padding: 10px; border-radius: 5px; color: white; text-decoration: none; }
+        .menu-links a:hover, .menu-links a.active { background: #1a6b3d; }
+        .logout { margin-top: auto; }
+        .main-content { display: flex; flex: 1; min-width: 0; flex-direction: column; padding: 30px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+        .status { display: flex; align-items: center; gap: 5px; color: #2e7d32; font-weight: bold; }
+        .status::before { width: 10px; height: 10px; border-radius: 50%; background: #2e7d32; content: ""; }
+        .linaje-layout { display: flex; flex: 1; gap: 20px; }
+        .search-panel { display: flex; width: 35%; flex-direction: column; gap: 15px; }
+        .search-panel h2 { color: #333; font-size: 1.5rem; }
+        .search-panel p { margin-bottom: 10px; color: #666; font-size: .9rem; }
+        .search-input { width: 100%; margin-bottom: 10px; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; }
+        .btn { padding: 12px; border: 0; border-radius: 5px; color: white; background: #1a4a2c; font-size: 1rem; font-weight: bold; text-align: center; cursor: pointer; }
+        .scanned-panel { display: flex; width: 65%; flex-direction: column; padding: 30px; border-radius: 10px; background: white; box-shadow: 0 4px 10px rgb(0 0 0 / 5%); }
+        .scanned-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .scanned-header h2 { margin-bottom: 5px; color: #333; font-size: 1.5rem; }
+        .scanned-header p { color: #666; font-size: .9rem; }
+        .badge { display: inline-block; padding: 5px 10px; border-radius: 15px; color: #2e7d32; background: #e8f5e9; font-size: .8rem; font-weight: bold; }
+        .scanned-list { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .scanned-item { display: flex; align-items: center; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; }
+        .item-icon { margin-right: 20px; font-size: 2rem; }
+        .item-details { flex-grow: 1; }
+        .item-details strong { display: block; margin-bottom: 5px; color: #111; font-size: 1.1rem; }
+        .item-details small { color: #666; font-size: .85rem; }
+        .item-tag { margin-right: 15px; padding: 5px 10px; border-radius: 5px; color: white; font-size: .8rem; font-weight: bold; white-space: nowrap; }
+        .tag-vaca { background: #0f4a29; }
+        .tag-ternero { background: #4caf50; }
+        .btn-small { display: inline-block; padding: 8px 15px; border: 1px solid #1a4a2c; border-radius: 5px; color: #1a4a2c; font-size: .85rem; font-weight: bold; text-align: center; text-decoration: none; }
+        @media (max-width: 760px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; }
+            .user-info { margin-bottom: 18px; }
+            .menu-links { display: flex; flex-wrap: wrap; gap: 4px; }
+            .menu-links li { margin: 0; }
+            .main-content { padding: 18px; }
+            .linaje-layout { flex-direction: column; }
+            .search-panel, .scanned-panel { width: 100%; }
+            .scanned-panel { padding: 18px; }
+            .scanned-item { flex-wrap: wrap; gap: 10px; }
+            .item-details { min-width: 60%; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>Agrícola Moncopulli</h2><small>S.A.</small></div>
+        <div class="user-info"><div class="avatar">U</div><div><p><strong>Usuario</strong></p><small>Predio sin asignar</small></div></div>
+        <p style="font-size:.8rem;margin-bottom:10px;color:#a1c2af">ACCESOS DIRECTOS</p>
+        <ul class="menu-links">
+            <li><a href="{% url 'gestor_biologica_monco:inicio' %}">Inicio</a></li>
+            <li><a class="active" href="{% url 'gestor_biologica_monco:linaje' %}">Linaje Sanguíneo</a></li>
+            <li><a href="{% url 'gestor_biologica_monco:historial' %}">Historial Inseminación</a></li>
+        </ul>
+        <div class="logout"><ul class="menu-links"><li><a href="{% url 'gestor_biologica_monco:login' %}">Cerrar Sesión</a></li></ul></div>
+    </aside>
+    <main class="main-content">
+        <header class="header"><div class="status">Sistema Sincronizado</div><div>Usuario - Predio sin asignar</div></header>
+        <div class="linaje-layout">
+            <section class="search-panel">
+                <h2>Consulta de Linaje</h2>
+                <p>Ingrese manualmente la caravana para verificar compatibilidad.</p>
+                <input type="search" class="search-input" placeholder="🔍 Buscar Caravana RFID..." aria-label="Buscar caravana RFID">
+                <button type="button" class="btn">Buscar</button>
+                <button type="button" class="btn">Agregar Manual</button>
+            </section>
+            <section class="scanned-panel">
+                <header class="scanned-header">
+                    <div><h2>Registros de Terreno (RFID)</h2><p>Listado de IDs capturados recientemente con el bastón lector.</p></div>
+                    <span class="badge">Lecturas Recientes</span>
+                </header>
+                <div class="scanned-list">
+                    {% for bovino in bovinos %}
+                        <article class="scanned-item">
+                            <div class="item-icon">{% if bovino.sexo == "Macho" %}🐂{% else %}🐄{% endif %}</div>
+                            <div class="item-details">
+                                <strong>ID: {{ bovino.codigo_rfid }}</strong>
+                                <small>Estado: {{ bovino.estado_actual }} | Raza: {{ bovino.raza.nombre_raza }}</small>
+                            </div>
+                            <span class="item-tag tag-vaca">{{ bovino.sexo }}</span>
+                            <a href="{% url 'gestor_biologica_monco:verificar' %}?bovino={{ bovino.pk }}" class="btn-small">Verificar linaje</a>
+                        </article>
+                    {% empty %}
+                        <p style="padding:24px;color:#68746d;text-align:center">Todavía no hay registros de terreno para mostrar.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>
