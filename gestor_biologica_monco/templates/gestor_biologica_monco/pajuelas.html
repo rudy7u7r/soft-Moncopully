@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrícola Moncopulli - Mantenedor de Pajuelas</title>
+    <style>
+        /* (Pega exactamente el mismo bloque <style> de inseminacion.html aquí) */
+        :root {
+            --primary: #0f4a29;
+            --primary-light: #1a6b3d;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border-color: #eaeaea;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
+        
+                .sidebar {
+            width: 250px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            position: fixed;
+            height: 100%;
+            z-index: 1000;
+            transform: translateX(0);
+        }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 1.2rem; font-weight: 600; }
+        .menu-links { list-style: none; padding: 0 15px; flex-grow: 1; }
+        .menu-links li { margin-bottom: 10px; }
+        .menu-links a { color: white; text-decoration: none; display: block; padding: 12px 15px; border-radius: 6px; font-size: 0.95rem; transition: background 0.2s; }
+        .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
+        .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
+        
+                .main-content {
+            flex-grow: 1;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.expanded { margin-left: 0; }
+        
+        .menu-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary); display: flex; align-items: center; gap: 15px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
+        .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
+        
+        .content-card { background-color: var(--card-bg); border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); flex-grow: 1; border: 1px solid var(--border-color); }
+        .page-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .page-title h1 { font-size: 1.5rem; color: var(--text-main); font-weight: 600; }
+        .btn-primary { background-color: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-primary:hover { background-color: var(--primary-light); }
+        
+        .table-container { width: 100%; overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+        th { background-color: #f9f9f9; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+        tr:hover { background-color: #fbfbfb; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background-color: #e8f5e9; color: #2e7d32; }
+        .badge-low { background-color: #ffebee; color: #c62828; }
+    </style>
+    {% include "gestor_biologica_monco/_parcela_estilos.html" %}
+</head>
+<body>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-logo"><img src="/static/gestor_biologica_monco/img/logo_moncopulli.jpg" alt="Logo Agrícola Moncopulli"></div>
+            <h2>Agrícola Moncopulli</h2>
+            <span class="brand-sub">Parcela &amp; Ganadería</span>
+        </div>
+        <ul class="menu-links">
+            <li><a href="/inicio/">Panel General</a></li>
+            <li><a href="/inseminacion/">Inseminación</a></li>
+            <li><a href="/linaje/">Linaje Sanguíneo</a></li>
+            <li><a href="/pajuelas/" class="active">Mantenedor de Pajuelas</a></li>
+            <li><a href="/informes/">Informes</a></li>
+        </ul>
+        <div class="logout">
+            <ul class="menu-links" style="padding:0;">
+                <li><a href="/login/">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        <div class="top-bar">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Inventario Genético</span>
+            </button>
+            <div class="user-status">
+                <span class="status-dot"></span> Sincronizado | {{ user.username|default:"Administrador" }}
+            </div>
+        </div>
+
+        {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
+
+        <div class="content-card">
+            <div class="page-title">
+                <h1>Mantenedor de Pajuelas de Semen</h1>
+                <a href="/pajuelas/nueva/" class="btn-primary">Ingresar Nuevo Lote</a>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lote Pajuela</th>
+                            <th>Toro (Local / Externo)</th>
+                            <th>Fecha de Extracción</th>
+                            <th>Stock Disponible</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pajuela in pajuelas %}
+                        <tr>
+                            <td><strong>{{ pajuela.lote_pajuela }}</strong></td>
+                            <td>
+                                {% if pajuela.toro %}
+                                    {{ pajuela.toro.codigo_rfid }} (Local)
+                                {% else %}
+                                    {{ pajuela.codigo_toro_externo }} (Externo)
+                                {% endif %}
+                            </td>
+                            <td>{{ pajuela.fecha_extraccion|date:"d M Y" }}</td>
+                            <td>{{ pajuela.stock }} unidades</td>
+                            <td>
+                                {% if pajuela.stock > 10 %}
+                                    <span class="badge">Suficiente</span>
+                                {% else %}
+                                    <span class="badge badge-low">Stock Crítico</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted);">No hay pajuelas en el inventario.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            try {
+                localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+            } catch (e) {}
+        }
+
+        (function() {
+            try {
+                if (localStorage.getItem('sidebar_collapsed') === 'true') {
+                    const sidebar = document.getElementById('sidebar');
+                    const mainContent = document.getElementById('mainContent');
+                    if (sidebar && mainContent) {
+                        sidebar.classList.add('collapsed');
+                        mainContent.classList.add('expanded');
+                    }
+                }
+            } catch (e) {}
+        })();
+    </script>
+</body>
+</html>

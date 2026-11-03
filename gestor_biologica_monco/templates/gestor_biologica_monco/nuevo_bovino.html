@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrícola Moncopulli - Registrar Bovino</title>
+    <style>
+        :root {
+            --primary: #0f4a29;
+            --primary-light: #1a6b3d;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border-color: #eaeaea;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
+        
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            position: fixed;
+            height: 100%;
+            z-index: 1000;
+            transform: translateX(0);
+        }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 1.2rem; font-weight: 600; }
+        .menu-links { list-style: none; padding: 0 15px; flex-grow: 1; }
+        .menu-links li { margin-bottom: 10px; }
+        .menu-links a { color: white; text-decoration: none; display: block; padding: 12px 15px; border-radius: 6px; font-size: 0.95rem; transition: background 0.2s; }
+        .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
+        .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
+        
+        .main-content {
+            flex-grow: 1;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.expanded { margin-left: 0; }
+        
+        .menu-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary); display: flex; align-items: center; gap: 15px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
+        .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
+        
+        .content-wrapper { max-width: 720px; width: 100%; margin: 0 auto; }
+        .page-title { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .page-title h1 { font-size: 1.5rem; color: var(--text-main); font-weight: 600; }
+        .back-icon { color: var(--text-muted); text-decoration: none; font-size: 1.2rem; font-weight: bold; border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 6px; }
+        .back-icon:hover { color: var(--primary); border-color: var(--primary); }
+
+        .content-card { background-color: var(--card-bg); border-radius: 8px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border-color); }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group.full-width { grid-column: span 2; }
+        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; background-color: #fff; }
+        .form-control:focus { border-color: var(--primary); }
+        .form-control[readonly] { background-color: #f5f5f5; color: #666; cursor: not-allowed; }
+
+        .section-title { font-size: 1rem; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 20px; margin-top: 10px; font-weight: 600; }
+
+        .lineage-subbox {
+            grid-column: span 2;
+            background-color: #f9fbf9;
+            border: 1px solid #dce8de;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin-bottom: 5px;
+        }
+        .lineage-subbox-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 14px;
+        }
+
+        .btn-submit { background-color: var(--primary); color: white; padding: 15px; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; width: 100%; margin-top: 10px; }
+        .btn-submit:hover { background-color: var(--primary-light); }
+
+        .alert-danger { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-weight: 500; font-size: 0.95rem; }
+    </style>
+    {% include "gestor_biologica_monco/_parcela_estilos.html" %}
+</head>
+<body>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-logo"><img src="/static/gestor_biologica_monco/img/logo_moncopulli.jpg" alt="Logo Agrícola Moncopulli"></div>
+            <h2>Agrícola Moncopulli</h2>
+            <span class="brand-sub">Parcela &amp; Ganadería</span>
+        </div>
+        <ul class="menu-links">
+            <li><a href="/inicio/">Panel General</a></li>
+            <li>
+                <a href="/inseminacion/">Inseminación</a>
+                <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
+                    <li><a href="/inseminacion/diagnostico/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Diagnóstico de Preñez</a></li>
+                </ul>
+            </li>
+            <li><a href="/linaje/">Linaje Sanguíneo</a></li>
+            <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
+            <li><a href="/informes/">Informes</a></li>
+        </ul>
+        <div class="logout">
+            <ul class="menu-links" style="padding:0;">
+                <li><a href="/login/">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        <div class="top-bar">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Gestión de Registro</span>
+            </button>
+            <div class="user-status">
+                <span class="status-dot"></span> Sincronizado | {{ user.username|default:"Administrador" }}
+            </div>
+        </div>
+
+        {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
+
+        <div class="content-wrapper">
+            <div class="page-title">
+                <a href="/inicio/" class="back-icon">&larr; Volver</a>
+                <h1>Completar Registro de Bovino</h1>
+            </div>
+
+            <div class="content-card">
+                
+                {% if error %}
+                <div class="alert-danger">{{ error }}</div>
+                {% endif %}
+
+                <!-- El formulario envía por POST conservando los parámetros GET en la URL -->
+                <form method="POST" action="/bovino/nuevo/?sexo={{ sexo }}&linaje={{ linaje }}">
+                    {% csrf_token %}
+                    
+                    <div class="section-title">Datos Generales</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Clasificación (Sexo)</label>
+                            <input type="text" name="sexo" class="form-control" value="{{ sexo }}" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Raza</label>
+                            <select name="raza_id" class="form-control" required>
+                                <option value="">-- Seleccione Raza --</option>
+                                {% for r in razas %}
+                                    <option value="{{ r.id_raza }}">{{ r.nombre_raza }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fecha de Nacimiento</label>
+                            <input type="date" name="fecha_nacimiento" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Estado Actual</label>
+                            <input type="text" name="estado_actual" class="form-control" placeholder="Ej. Activo, Ternero, etc." required>
+                        </div>
+                    </div>
+
+                    {% if linaje == 'si' %}
+                    <div class="section-title" style="margin-top: 20px;">Trazabilidad y Linaje Sanguíneo</div>
+                    <div class="form-grid">
+
+                        <!-- Bloque 1: Receptora (Madre) -->
+                        <div class="lineage-subbox">
+                            <div class="lineage-subbox-title">Receptora (Madre)</div>
+                            <div class="form-grid">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Origen de la Madre</label>
+                                    <select id="tipo-madre" name="tipo_madre" class="form-control" onchange="cambiarTipoMadre()">
+                                        <option value="vaca_registrada">Vaca Registrada en el Sistema</option>
+                                        <option value="madre_externa">Vaca / Madre Externa</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label id="label-madre-seleccion">Seleccione Vaca Registrada</label>
+
+                                    <!-- Selector de Vacas Registradas (Bovino Hembra) -->
+                                    <select id="select-vaca-registrada" name="vaca_madre_id" class="form-control" required>
+                                        <option value="">-- Seleccione Vaca (RFID) --</option>
+                                        {% for v in vacas_registradas %}
+                                            <option value="{{ v.id_bovino }}">RFID: {{ v.codigo_rfid }} - {{ v.raza.nombre_raza|default:"Angus" }} ({{ v.estado_actual }})</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <!-- Selector de Madres Externas -->
+                                    <select id="select-madre-externa" name="madre_id" class="form-control" style="display: none;" disabled>
+                                        <option value="">-- Seleccione Vaca Externa --</option>
+                                        {% for m in madres %}
+                                            <option value="{{ m.id_madregenero }}">Madre Externa ID #{{ m.id_madregenero }} ({{ m.estado_actual }})</option>
+                                        {% endfor %}
+                                        <option value="nueva_externa">+ Registrar como Nueva Vaca Externa</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bloque 2: Reproductor (Padre) -->
+                        <div class="lineage-subbox">
+                            <div class="lineage-subbox-title">Reproductor (Padre)</div>
+                            <div class="form-grid">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Origen del Padre</label>
+                                    <select id="tipo-padre" name="tipo_padre" class="form-control" onchange="cambiarTipoPadre()">
+                                        <option value="pajuela">Pajuela de Semen (Inventario)</option>
+                                        <option value="toro_registrado">Toro Registrado en el Sistema</option>
+                                        <option value="toro_externo">Toro Externo (De fuera)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label id="label-padre-seleccion">Seleccione la Pajuela utilizada</label>
+
+                                    <!-- Selector de Pajuelas -->
+                                    <select id="select-pajuela" name="pajuela_id" class="form-control" required>
+                                        <option value="">-- Seleccione Lote de Pajuela --</option>
+                                        {% for p in pajuelas %}
+                                            <option value="{{ p.id_pajuela }}">
+                                                Lote: {{ p.lote_pajuela }} ({% if p.toro %}Toro Local: {{ p.toro.codigo_rfid }}{% else %}Toro Ext.: {{ p.codigo_toro_externo }}{% endif %})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <!-- Selector de Toros Registrados (Bovino Macho) -->
+                                    <select id="select-toro-registrado" name="toro_padre_id" class="form-control" style="display: none;" disabled>
+                                        <option value="">-- Seleccione Toro Registrado (RFID) --</option>
+                                        {% for t in toros_registrados %}
+                                            <option value="{{ t.id_bovino }}">RFID: {{ t.codigo_rfid }} - {{ t.raza.nombre_raza|default:"Angus" }} ({{ t.estado_actual }})</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <!-- Selector de Toros Externos -->
+                                    <select id="select-toro-externo" name="toro_externo_id" class="form-control" style="display: none;" disabled>
+                                        <option value="">-- Seleccione Toro Externo --</option>
+                                        {% for pe in pajuelas_externas %}
+                                            <option value="{{ pe.id_pajuela }}">Toro Externo: {{ pe.codigo_toro_externo }} (Lote: {{ pe.lote_pajuela }})</option>
+                                        {% endfor %}
+                                        <option value="nuevo_externo">+ Registrar Nuevo Toro Externo (De fuera)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn-submit">Guardar Registro en Base de Datos</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            try {
+                localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+            } catch (e) {}
+        }
+
+        (function() {
+            try {
+                if (localStorage.getItem('sidebar_collapsed') === 'true') {
+                    const sidebar = document.getElementById('sidebar');
+                    const mainContent = document.getElementById('mainContent');
+                    if (sidebar && mainContent) {
+                        sidebar.classList.add('collapsed');
+                        mainContent.classList.add('expanded');
+                    }
+                }
+            } catch (e) {}
+        })();
+
+        function cambiarTipoMadre() {
+            const tipo = document.getElementById('tipo-madre').value;
+            const label = document.getElementById('label-madre-seleccion');
+            const selVaca = document.getElementById('select-vaca-registrada');
+            const selExterna = document.getElementById('select-madre-externa');
+
+            if (tipo === 'vaca_registrada') {
+                label.innerText = 'Seleccione Vaca Registrada';
+                selVaca.style.display = 'block';
+                selVaca.disabled = false;
+                selVaca.required = true;
+
+                selExterna.style.display = 'none';
+                selExterna.disabled = true;
+                selExterna.required = false;
+            } else {
+                label.innerText = 'Seleccione Vaca / Madre Externa';
+                selVaca.style.display = 'none';
+                selVaca.disabled = true;
+                selVaca.required = false;
+
+                selExterna.style.display = 'block';
+                selExterna.disabled = false;
+                selExterna.required = true;
+            }
+        }
+
+        function cambiarTipoPadre() {
+            const tipo = document.getElementById('tipo-padre').value;
+            const label = document.getElementById('label-padre-seleccion');
+            const selPajuela = document.getElementById('select-pajuela');
+            const selToro = document.getElementById('select-toro-registrado');
+            const selExterno = document.getElementById('select-toro-externo');
+
+            selPajuela.style.display = 'none';
+            selPajuela.disabled = true;
+            selPajuela.required = false;
+
+            selToro.style.display = 'none';
+            selToro.disabled = true;
+            selToro.required = false;
+
+            selExterno.style.display = 'none';
+            selExterno.disabled = true;
+            selExterno.required = false;
+
+            if (tipo === 'pajuela') {
+                label.innerText = 'Seleccione la Pajuela utilizada';
+                selPajuela.style.display = 'block';
+                selPajuela.disabled = false;
+                selPajuela.required = true;
+            } else if (tipo === 'toro_registrado') {
+                label.innerText = 'Seleccione Toro Registrado';
+                selToro.style.display = 'block';
+                selToro.disabled = false;
+                selToro.required = true;
+            } else if (tipo === 'toro_externo') {
+                label.innerText = 'Seleccione Toro Externo (De fuera)';
+                selExterno.style.display = 'block';
+                selExterno.disabled = false;
+                selExterno.required = true;
+            }
+        }
+    </script>
+</body>
+</html>

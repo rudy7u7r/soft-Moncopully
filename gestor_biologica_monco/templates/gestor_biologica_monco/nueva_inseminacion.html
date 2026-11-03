@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrícola Moncopulli - Registrar Inseminación</title>
+    <style>
+        :root {
+            --primary: #0f4a29;
+            --primary-light: #1a6b3d;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border-color: #eaeaea;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
+        
+                .sidebar {
+            width: 250px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            position: fixed;
+            height: 100%;
+            z-index: 1000;
+            transform: translateX(0);
+        }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 1.2rem; font-weight: 600; }
+        .menu-links { list-style: none; padding: 0 15px; flex-grow: 1; }
+        .menu-links li { margin-bottom: 10px; }
+        .menu-links a { color: white; text-decoration: none; display: block; padding: 12px 15px; border-radius: 6px; font-size: 0.95rem; transition: background 0.2s; }
+        .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
+        .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
+        
+                .main-content {
+            flex-grow: 1;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.expanded { margin-left: 0; }
+        
+        .menu-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary); display: flex; align-items: center; gap: 15px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
+        .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
+        
+        .content-wrapper { max-width: 600px; width: 100%; margin: 0 auto; }
+        .page-title { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .page-title h1 { font-size: 1.5rem; color: var(--text-main); font-weight: 600; }
+        .back-icon { color: var(--text-muted); text-decoration: none; font-size: 1.2rem; font-weight: bold; border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 6px; }
+        .back-icon:hover { color: var(--primary); border-color: var(--primary); }
+
+        .content-card { background-color: var(--card-bg); border-radius: 8px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border-color); }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+
+        .btn-submit { background-color: var(--primary); color: white; padding: 15px; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; width: 100%; margin-top: 10px; }
+        .btn-submit:hover { background-color: var(--primary-light); }
+
+        /* Mensaje de Error (Ej. Consanguinidad) */
+        .alert-danger { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-weight: 500; font-size: 0.95rem; }
+    </style>
+    {% include "gestor_biologica_monco/_parcela_estilos.html" %}
+</head>
+<body>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-logo"><img src="/static/gestor_biologica_monco/img/logo_moncopulli.jpg" alt="Logo Agrícola Moncopulli"></div>
+            <h2>Agrícola Moncopulli</h2>
+            <span class="brand-sub">Parcela &amp; Ganadería</span>
+        </div>
+        <ul class="menu-links">
+            <li><a href="/inicio/">Panel General</a></li>
+            <li><a href="/inseminacion/" class="active">Inseminación</a></li>
+            <li><a href="/linaje/">Linaje Sanguíneo</a></li>
+            <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
+            <li><a href="/informes/">Informes</a></li>
+        </ul>
+        <div class="logout">
+            <ul class="menu-links" style="padding:0;">
+                <li><a href="/login/">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        <div class="top-bar">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Gestión de Inseminaciones</span>
+            </button>
+            <div class="user-status">
+                <span class="status-dot"></span> Sincronizado | {{ user.username|default:"Administrador" }}
+            </div>
+        </div>
+
+        {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
+
+        <div class="content-wrapper">
+            <div class="page-title">
+                <a href="/inseminacion/" class="back-icon">&larr; Volver</a>
+                <h1>Registrar Nueva Inseminación</h1>
+            </div>
+
+            <div class="content-card">
+                
+                {% if error %}
+                <div class="alert-danger">
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <form method="POST" action="/inseminacion/nueva/">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label>Seleccione Vaca (Hembra)</label>
+                        <select name="vaca_id" class="form-control" required>
+                            <option value="">-- Seleccione un registro RFID --</option>
+                            {% for vaca in vacas %}
+                                <option value="{{ vaca.id_bovino }}">{{ vaca.codigo_rfid }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Seleccione Lote de Pajuela</label>
+                        <select name="pajuela_id" class="form-control" required>
+                            <option value="">-- Seleccione un lote disponible --</option>
+                            {% for pajuela in pajuelas %}
+                                <option value="{{ pajuela.id_pajuela }}">{{ pajuela.lote_pajuela }} (Stock: {{ pajuela.stock }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fecha de Servicio</label>
+                        <input type="date" name="fecha_servicio" class="form-control" required>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Procesar y Guardar Registro</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            try {
+                localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+            } catch (e) {}
+        }
+
+        (function() {
+            try {
+                if (localStorage.getItem('sidebar_collapsed') === 'true') {
+                    const sidebar = document.getElementById('sidebar');
+                    const mainContent = document.getElementById('mainContent');
+                    if (sidebar && mainContent) {
+                        sidebar.classList.add('collapsed');
+                        mainContent.classList.add('expanded');
+                    }
+                }
+            } catch (e) {}
+        })();
+    </script>
+</body>
+</html>

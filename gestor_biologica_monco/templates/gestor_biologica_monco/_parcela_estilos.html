@@ -1,0 +1,530 @@
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    :root {
+        --primary: #14532d;
+        --primary-light: #166534;
+        --primary-bright: #22c55e;
+        --meadow-green: #4ade80;
+        --meadow-soft: #dcfce7;
+        --earth-wood: #854d0e;
+        --earth-warm: #fef3c7;
+        --sky-light: #f0fdf4;
+        --bg-color: #f3f8f4;
+        --card-bg: rgba(255, 255, 255, 0.95);
+        --text-main: #1c2e24;
+        --text-muted: #5b7065;
+        --border-color: #d5e6da;
+        --shadow-soft: 0 10px 28px -6px rgba(20, 83, 45, 0.08), 0 4px 12px -2px rgba(20, 83, 45, 0.04);
+        --shadow-hover: 0 18px 35px -8px rgba(20, 83, 45, 0.15), 0 6px 16px -3px rgba(20, 83, 45, 0.08);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+        display: flex;
+        height: 100vh;
+        background: linear-gradient(160deg, #e8f5e9 0%, #f3f8f4 45%, #fef9ef 100%);
+        color: var(--text-main);
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Animaciones Globales de la Parcela */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes floatCloud {
+        0%, 100% { transform: translateX(0px); }
+        50% { transform: translateX(16px); }
+    }
+
+    /* Movimiento natural de pastoreo articulado desde el cuello (sin separar la cabeza) */
+    @keyframes grazeHeadRight {
+        0%, 100% { transform: rotate(0deg); }
+        40%, 60% { transform: rotate(9deg); }
+    }
+
+    @keyframes grazeHeadLeft {
+        0%, 100% { transform: rotate(0deg); }
+        40%, 60% { transform: rotate(-9deg); }
+    }
+
+    @keyframes wagTail {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(8deg); }
+    }
+
+    @keyframes sunGlow {
+        0%, 100% { transform: scale(1); opacity: 0.9; }
+        50% { transform: scale(1.06); opacity: 1; }
+    }
+
+    @keyframes pulseDot {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+        50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    }
+
+    /* Sidebar Formal con Logo Oficial */
+    .sidebar {
+        width: 265px;
+        background: linear-gradient(180deg, #0b2e19 0%, #14532d 65%, #166534 100%);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
+        position: fixed;
+        height: 100%;
+        z-index: 1000;
+        transform: translateX(0);
+        box-shadow: 6px 0 24px rgba(11, 46, 25, 0.18);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+    }
+
+    .sidebar.collapsed {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    .sidebar-header {
+        padding: 22px 20px 18px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        margin-bottom: 14px;
+        background: radial-gradient(circle at top, rgba(74, 222, 128, 0.14), transparent 70%);
+    }
+
+    .sidebar-header .brand-logo {
+        width: 92px;
+        height: 92px;
+        border-radius: 50%;
+        margin: 0 auto 12px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5ead6;
+        border: 2.5px solid rgba(255, 255, 255, 0.85);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    .sidebar-header .brand-logo img {
+        height: 112%;
+        width: auto;
+        display: block;
+    }
+
+    .sidebar-header h2 {
+        font-size: 1.12rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        color: #ffffff;
+    }
+
+    .sidebar-header .brand-sub {
+        font-size: 0.72rem;
+        color: #bbf7d0;
+        text-transform: uppercase;
+        letter-spacing: 1.1px;
+        margin-top: 4px;
+        display: block;
+        font-weight: 600;
+    }
+
+    .menu-links {
+        list-style: none;
+        padding: 0 14px;
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .menu-links li {
+        margin-bottom: 6px;
+    }
+
+    .menu-links a {
+        color: rgba(255, 255, 255, 0.88);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.92rem;
+        font-weight: 500;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .menu-links a:hover {
+        background-color: rgba(255, 255, 255, 0.11);
+        color: #ffffff;
+        transform: translateX(4px);
+    }
+
+    .menu-links a.active {
+        background: linear-gradient(90deg, rgba(34, 197, 94, 0.30) 0%, rgba(34, 197, 94, 0.10) 100%);
+        color: #ffffff;
+        font-weight: 700;
+        border-left: 4px solid #4ade80;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .logout {
+        padding: 14px;
+        margin-top: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.15);
+    }
+
+    /* Contenido Principal */
+    .main-content {
+        flex-grow: 1;
+        padding: 22px 36px 40px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        margin-left: 265px;
+        transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .main-content.expanded {
+        margin-left: 0;
+    }
+
+    /* Top Bar */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        padding: 14px 22px;
+        background: rgba(255, 255, 255, 0.90);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        box-shadow: var(--shadow-soft);
+        animation: fadeInUp 0.4s ease-out;
+    }
+
+    .menu-toggle {
+        background: none;
+        border: none;
+        font-size: 1.35rem;
+        cursor: pointer;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 10px;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .menu-toggle:hover {
+        background-color: var(--meadow-soft);
+    }
+
+    .user-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--primary);
+        background: var(--meadow-soft);
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-dot {
+        width: 9px;
+        height: 9px;
+        background-color: #16a34a;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulseDot 2s infinite;
+    }
+
+    /* Banner Ilustrado de la Parcela con Vacas */
+    .ranch-scenery-banner {
+        position: relative;
+        width: 100%;
+        min-height: 112px;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 52%, #86efac 53%, #22c55e 100%);
+        border: 1px solid #bbf7d0;
+        box-shadow: var(--shadow-soft);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 26px;
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .ranch-banner-brand {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        max-width: 60%;
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(6px);
+        padding: 12px 20px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.95);
+        box-shadow: 0 4px 15px rgba(20, 83, 45, 0.08);
+    }
+
+    .ranch-banner-logo {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--primary);
+        background-color: #f5ead6;
+    }
+
+    .ranch-banner-logo img {
+        height: 112%;
+        width: auto;
+        display: block;
+    }
+
+    .ranch-banner-text h4 {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--primary);
+        letter-spacing: 0.2px;
+    }
+
+    .ranch-banner-text p {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        margin-top: 3px;
+        font-weight: 500;
+    }
+
+    .ranch-svg-scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .cloud-anim-1 { animation: floatCloud 10s ease-in-out infinite; }
+    .cloud-anim-2 { animation: floatCloud 13s ease-in-out infinite reverse; }
+    .cow-head-anim-right {
+        transform-box: fill-box;
+        transform-origin: 15% 45%;
+        animation: grazeHeadRight 4.5s ease-in-out infinite;
+    }
+    .cow-head-anim-left {
+        transform-box: fill-box;
+        transform-origin: 85% 45%;
+        animation: grazeHeadLeft 5.2s ease-in-out infinite 1s;
+    }
+    .cow-tail-anim {
+        transform-box: fill-box;
+        transform-origin: 100% 0%;
+        animation: wagTail 3s ease-in-out infinite;
+    }
+    .sun-anim {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: sunGlow 4s ease-in-out infinite;
+    }
+
+    /* Tarjetas y Contenedores */
+    .content-card, .chart-box, .recent-box {
+        background-color: var(--card-bg);
+        backdrop-filter: blur(8px);
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid var(--border-color);
+        animation: fadeInUp 0.55s ease-out;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .kpi-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 18px;
+        margin-bottom: 26px;
+    }
+
+    .kpi-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 22px 18px;
+        text-align: center;
+        box-shadow: var(--shadow-soft);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .kpi-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #16a34a, #4ade80);
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-hover);
+        border-color: #86efac;
+    }
+
+    .kpi-card h3 {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .kpi-card .value {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--primary);
+        line-height: 1.1;
+    }
+
+    .kpi-card .desc {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 8px;
+        font-weight: 500;
+    }
+
+    /* Botones formales */
+    .btn-primary, .btn-submit, .btn-validate, .btn-fill {
+        background: linear-gradient(135deg, #15803d 0%, #14532d 100%) !important;
+        color: #ffffff !important;
+        border: none;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 4px 14px rgba(20, 83, 45, 0.20);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-primary:hover, .btn-submit:hover, .btn-validate:hover, .btn-fill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(20, 83, 45, 0.28);
+        filter: brightness(1.06);
+    }
+
+    .btn-outline, .back-icon {
+        border: 1.5px solid var(--primary) !important;
+        color: var(--primary) !important;
+        background: #ffffff;
+        border-radius: 9px !important;
+        font-weight: 700 !important;
+        transition: all 0.22s ease !important;
+    }
+
+    .btn-outline:hover, .back-icon:hover, .btn-outline.active-btn {
+        background: var(--primary) !important;
+        color: #ffffff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(20, 83, 45, 0.16);
+    }
+
+    /* Inputs y Selectores */
+    .form-control, .search-input, .chart-filter {
+        border: 1.5px solid #cde0d2 !important;
+        border-radius: 10px !important;
+        background-color: #ffffff;
+        transition: all 0.2s ease !important;
+    }
+
+    .form-control:focus, .search-input:focus, .chart-filter:focus {
+        border-color: #16a34a !important;
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15) !important;
+    }
+
+    /* Tablas */
+    table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    th {
+        background-color: #eff8f1 !important;
+        color: var(--primary) !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        font-size: 0.78rem !important;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #cce3d2 !important;
+    }
+
+    th:first-child { border-top-left-radius: 10px; }
+    th:last-child { border-top-right-radius: 10px; }
+
+    tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    tbody tr:hover {
+        background-color: #f2fbf4 !important;
+    }
+
+    .badge {
+        padding: 5px 12px !important;
+        border-radius: 999px !important;
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.2px;
+    }
+
+    .report-box, .box, .lineage-box {
+        border-radius: 12px !important;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .report-box:hover, .lineage-box:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+    }
+</style>
