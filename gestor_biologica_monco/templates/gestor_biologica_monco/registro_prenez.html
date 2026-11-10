@@ -83,6 +83,7 @@
         </div>
         <ul class="menu-links">
             <li><a href="/inicio/">Panel General</a></li>
+            <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
             <li>
                 <a href="/inseminacion/">Inseminación</a>
                 <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
@@ -131,23 +132,28 @@
                     {% csrf_token %}
                     
                     <div class="form-group">
-                        <label>Seleccione Inseminación Pendiente</label>
+                        <label>Seleccione Inseminación / Gestación</label>
                         <select name="inseminacion_id" class="form-control" required>
                             <option value="">-- Seleccione un registro --</option>
                             {% for ins in inseminaciones_pendientes %}
-                                <option value="{{ ins.id_inseminacion }}">Registro #{{ ins.id_inseminacion }} - Vaca: {{ ins.vaca.codigo_rfid }} (Fecha: {{ ins.fecha_servicio|date:"d/m/Y" }})</option>
+                                {% with diag=ins.diagnosticogestacion_set.first %}
+                                <option value="{{ ins.id_inseminacion }}">
+                                    Registro #{{ ins.id_inseminacion }} - Vaca: {{ ins.vaca.codigo_rfid }} (Servicio: {{ ins.fecha_servicio|date:"d/m/Y" }}{% if diag %} | Preñada en curso{% else %} | Diagnóstico pendiente{% endif %})
+                                </option>
+                                {% endwith %}
                             {% empty %}
-                                <option value="" disabled>No hay inseminaciones pendientes de diagnóstico</option>
+                                <option value="" disabled>No hay inseminaciones ni gestaciones activas pendientes</option>
                             {% endfor %}
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label>Resultado del Diagnóstico</label>
+                        <label>Resultado del Diagnóstico / Parto</label>
                         <select name="resultado" class="form-control" required>
                             <option value="">-- Seleccione el resultado --</option>
                             <option value="preñada">Preñada (Positivo)</option>
                             <option value="vacia">Vacía (Negativo)</option>
+                            <option value="mortinato">Ternero Murió en el Parto (Mortinato)</option>
                         </select>
                     </div>
 
@@ -157,8 +163,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Fecha de Diagnóstico</label>
-                        <input type="date" name="fecha_diagnostico" class="form-control" required>
+                        <label>Fecha de Diagnóstico / Suceso</label>
+                        <input type="date" name="fecha_diagnostico" class="form-control" value="{{ fecha_hoy }}" required>
                     </div>
 
                     <button type="submit" class="btn-submit">Guardar Diagnóstico</button>

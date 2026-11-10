@@ -49,54 +49,32 @@ def diagnosticos_disponibles():
     return Q(resultado='preñada') & ~Q(id_diagnostico__in=diagnosticos_con_parto)
 
 
-# --- Modelos Base ---
-
-class Rol(models.Model):
-    id_rol = models.AutoField(primary_key=True)
-    nombre_rol = models.CharField(max_length=50)
-    descripcion = models.TextField()
-    def __str__(self): return self.nombre_rol
-
-class Predio(models.Model):
-    id_predio = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=100)
-    ubicacion = models.CharField(max_length=150)
-    def __str__(self): return self.nombre
+# --- Modelos de Usuarios y Control de Acceso (RBAC) ---
 
 class Usuario(models.Model):
-    rut = models.CharField(max_length=12, primary_key=True)
-    nombre_completo = models.CharField(max_length=100)
-    rol = models.ForeignKey(Rol, on_delete=models.RESTRICT, db_column='id_rol')
-    predio = models.ForeignKey(Predio, on_delete=models.RESTRICT, db_column='id_predio')
-    fecha_ingreso = models.DateTimeField()
-    def __str__(self): return self.nombre_completo
+    ROL_CHOICES = [
+        ('pendiente', 'En Espera de Permisos'),
+        ('admin', 'Administrador'),
+        ('veterinario', 'Veterinario'),
+        ('operario', 'Operario de Terreno'),
+    ]
+    id_usuario = models.AutoField(primary_key=True)
+    rut = models.CharField(max_length=20, unique=True)
+    nombre_completo = models.CharField(max_length=100, default='Usuario')
+    email = models.EmailField(max_length=120, default='usuario@gmail.com')
+    password = models.CharField(max_length=128)
+    rol = models.CharField(max_length=20, choices=ROL_CHOICES, default='pendiente')
+    aprobado_por_admin = models.BooleanField(default=False)
+    acceso_rendimiento = models.BooleanField(default=False)
+    acceso_inseminacion = models.BooleanField(default=False)
+    acceso_linaje = models.BooleanField(default=False)
+    acceso_pajuelas = models.BooleanField(default=False)
+    acceso_informes = models.BooleanField(default=False)
+    acceso_bovinos = models.BooleanField(default=False)
+    activo = models.BooleanField(default=True)
 
-class Parcela(models.Model):
-    id_parcela = models.AutoField(primary_key=True)
-    predio = models.ForeignKey(Predio, on_delete=models.CASCADE, db_column='id_predio')
-    codigo = models.CharField(max_length=20)
-    def __str__(self): return self.codigo
-
-class Lote(models.Model):
-    id_lote = models.AutoField(primary_key=True)
-    parcela = models.ForeignKey(Parcela, on_delete=models.CASCADE, db_column='id_parcela')
-    nombre_lote = models.CharField(max_length=50)
-    descripcion = models.TextField()
-    def __str__(self): return self.nombre_lote
-
-class TipoReporte(models.Model):
-    id_tipo_reporte = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=80)
-    descripcion = models.TextField()
-    vista_sql = models.CharField(max_length=80)
-    def __str__(self): return self.nombre
-
-class ReporteGenerado(models.Model):
-    id_reporte = models.AutoField(primary_key=True)
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, db_column='usuario_rut')
-    tipo_reporte = models.ForeignKey(TipoReporte, on_delete=models.CASCADE, db_column='id_tipo_reporte')
-    filtros = models.JSONField()
-    fecha_generacion = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"{self.rut} ({self.email}) - {self.get_rol_display()}"
 
 
 # --- Modelos de Ganado ---
@@ -148,13 +126,6 @@ class Parentesco(models.Model):
     generacion = models.IntegerField()
     coef_relacion = models.DecimalField(max_digits=5, decimal_places=4)
 
-class CoeficienteConsanguinidad(models.Model):
-    id_coef = models.AutoField(primary_key=True)
-    bovino = models.ForeignKey(Bovino, on_delete=models.CASCADE, db_column='id_bovino')
-    valor_f = models.DecimalField(max_digits=5, decimal_places=4)
-    generaciones_eval = models.IntegerField()
-    fecha_calculo = models.DateTimeField()
-
 class AlertaConsanguinidad(models.Model):
     id_alerta = models.AutoField(primary_key=True)
     vaca = models.ForeignKey(Bovino, on_delete=models.CASCADE, db_column='id_vaca', related_name='alertas_vaca')
@@ -194,6 +165,7 @@ class DiagnosticoGestacion(models.Model):
     RESULTADO_CHOICES = [
         ('preñada', 'Preñada'),
         ('vacia', 'Vacía'),
+        ('mortinato', 'Ternero Murió en el Parto'),
     ]
     id_diagnostico = models.AutoField(primary_key=True)
     inseminacion = models.ForeignKey(Inseminacion, on_delete=models.CASCADE, db_column='id_inseminacion', limit_choices_to=inseminaciones_disponibles)
@@ -223,17 +195,3 @@ class Parto(models.Model):
     observaciones = models.TextField()
     def __str__(self): 
         return f"Parto {self.fecha_parto} - Cría {self.cria}"
-
-class MovimientoBovino(models.Model):
-    id_movimiento = models.AutoField(primary_key=True)
-    bovino = models.ForeignKey(Bovino, on_delete=models.CASCADE, db_column='id_bovino')
-    lote_origen = models.ForeignKey(Lote, on_delete=models.SET_NULL, null=True, db_column='id_lote_origen', related_name='movimientos_salida')
-    lote_destino = models.ForeignKey(Lote, on_delete=models.SET_NULL, null=True, db_column='id_lote_destino', related_name='movimientos_entrada')
-    fecha = models.DateTimeField()
-    motivo = models.CharField(max_length=100)
-
-class ControlPeso(models.Model):
-    id_peso = models.AutoField(primary_key=True)
-    bovino = models.ForeignKey(Bovino, on_delete=models.CASCADE, db_column='id_bovino')
-    peso_kg = models.DecimalField(max_digits=6, decimal_places=2)
-    fecha_pesaje = models.DateField()

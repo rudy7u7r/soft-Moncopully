@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrícola Moncopulli - Roles y Permisos</title>
+    <style>
+        :root {
+            --primary: #0f4a29;
+            --primary-light: #1a6b3d;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border-color: #eaeaea;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            position: fixed;
+            height: 100%;
+            z-index: 1000;
+            transform: translateX(0);
+        }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 1.2rem; font-weight: 600; letter-spacing: 0.5px; }
+        .menu-links { list-style: none; padding: 0 15px; flex-grow: 1; }
+        .menu-links li { margin-bottom: 10px; }
+        .menu-links a { color: white; text-decoration: none; display: block; padding: 12px 15px; border-radius: 6px; font-size: 0.95rem; transition: background 0.2s; }
+        .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
+        .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.expanded { margin-left: 0; }
+
+        .menu-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary); display: flex; align-items: center; gap: 15px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
+        .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
+
+        .content-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 26px 28px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .page-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-title h1, .page-title h2 {
+            font-size: 1.25rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .search-rut-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .search-rut-input {
+            padding: 9px 14px;
+            border: 1.5px solid #bfd4c5;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            min-width: 240px;
+            outline: none;
+            color: var(--text-main);
+        }
+        .search-rut-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 74, 41, 0.1);
+        }
+
+        .pending-card {
+            background: #fffdf7;
+            border: 1.5px solid #f0d78c;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+        }
+        .pending-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #e6d193;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .pending-user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .pending-rut {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0f4a29;
+            background: #e6f2eb;
+            padding: 5px 12px;
+            border-radius: 6px;
+        }
+        .pending-meta {
+            font-size: 0.9rem;
+            color: #37473c;
+        }
+        .pending-badge {
+            background: #fff3cd;
+            color: #996500;
+            border: 1px solid #ffe69c;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #c8d6cd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: #fff;
+            outline: none;
+        }
+        .form-control:focus { border-color: var(--primary); }
+
+        .perm-checks-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 14px;
+        }
+        .perm-check-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.84rem;
+            color: #2c3e32;
+            font-weight: 600;
+            background: #ffffff;
+            padding: 8px 11px;
+            border-radius: 6px;
+            border: 1px solid #dce8df;
+            cursor: pointer;
+        }
+        .perm-check-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background-color: var(--primary-light); }
+
+        .alert-success { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; padding: 13px 16px; border-radius: 6px; margin-bottom: 18px; font-size: 0.9rem; font-weight: 600; }
+        .alert-danger { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 13px 16px; border-radius: 6px; margin-bottom: 18px; font-size: 0.9rem; font-weight: 600; }
+
+        .table-container { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 13px 14px; border-bottom: 1px solid var(--border-color); font-size: 0.88rem; vertical-align: middle; }
+        th { background-color: #f6faf7; color: #54685b; font-weight: 700; text-transform: uppercase; font-size: 0.76rem; }
+
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.74rem; font-weight: 600; display: inline-block; }
+        .badge-admin { background-color: #e6f2eb; color: #0f4a29; }
+        .badge-vet { background-color: #e3f2fd; color: #1565c0; }
+        .badge-op { background-color: #fff3e0; color: #e65100; }
+
+        .perm-pill {
+            display: inline-block;
+            background: #eef5f0;
+            color: #1f4d31;
+            border: 1px solid #cfe0d4;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.73rem;
+            font-weight: 600;
+            margin: 2px 3px 2px 0;
+        }
+
+        .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-action { padding: 6px 11px; border-radius: 5px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid #cad8ce; background: #fff; color: var(--primary); text-decoration: none; }
+        .btn-action:hover { background: #eef5f0; border-color: var(--primary); }
+        .btn-action-warn { color: #996500; border-color: #ebd08b; }
+        .btn-action-warn:hover { background: #fff8e1; border-color: #d49b00; }
+        .btn-action-danger { color: #b71c1c; border-color: #e5b8b8; }
+        .btn-action-danger:hover { background: #ffebee; border-color: #b71c1c; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: #fff;
+            width: 100%;
+            max-width: 620px;
+            border-radius: 10px;
+            padding: 26px 28px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .modal-header h3 { color: var(--primary); font-size: 1.15rem; }
+    </style>
+    {% include "gestor_biologica_monco/_parcela_estilos.html" %}
+</head>
+<body>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-logo"><img src="/static/gestor_biologica_monco/img/logo_moncopulli.jpg" alt="Logo Agrícola Moncopulli"></div>
+            <h2>Agrícola Moncopulli</h2>
+            <span class="brand-sub">Parcela &amp; Ganadería</span>
+        </div>
+        <ul class="menu-links">
+            <li><a href="/inicio/">Panel General</a></li>
+            <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
+            <li><a href="/inseminacion/">Inseminación</a></li>
+            <li><a href="/linaje/">Linaje Sanguíneo</a></li>
+            <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
+            <li><a href="/informes/">Informes</a></li>
+            <li><a href="/usuarios/" class="active">Roles y Permisos</a></li>
+        </ul>
+        <div class="logout">
+            <ul class="menu-links" style="padding:0;">
+                <li><a href="/login/?logout=1">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        <div class="top-bar">
+            <button class="menu-toggle" id="menuToggle">☰ <span style="font-size: 1.15rem; font-weight: 600; color: #333; margin-left: 10px;">Control de Roles y Permisos por RUT</span></button>
+            <div class="user-status"><span class="status-dot"></span> {{ rol_titulo }} ({{ usuario_rut_activo }})</div>
+        </div>
+
+        {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
+
+        {% if mensaje_exito %}
+            <div class="alert-success">{{ mensaje_exito }}</div>
+        {% endif %}
+        {% if mensaje_error %}
+            <div class="alert-danger">{{ mensaje_error }}</div>
+        {% endif %}
+
+        <!-- SECCIÓN 1: SOLICITUDES PENDIENTES DE PERMISOS -->
+        <div class="content-card">
+            <div class="page-title">
+                <h1>Solicitudes de Acceso Esperando Permisos ({{ usuarios_pendientes|length }})</h1>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Usuarios esperando asignación de rol y permisos</span>
+            </div>
+
+            {% for u in usuarios_pendientes %}
+            <div class="pending-card item-usuario-buscable" data-rut="{{ u.rut }}">
+                <div class="pending-header">
+                    <div class="pending-user-info">
+                        <span class="pending-rut">{{ u.rut }}</span>
+                        <div class="pending-meta">
+                            <strong>{{ u.nombre_completo }}</strong> &middot; Gmail: <strong>{{ u.email|default:"No especificado" }}</strong>
+                        </div>
+                    </div>
+                    <span class="pending-badge">En Espera de Permisos</span>
+                </div>
+
+                <form method="POST" action="/usuarios/">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="asignar_permisos">
+                    <input type="hidden" name="usuario_id" value="{{ u.id_usuario }}">
+
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <label style="font-size: 0.86rem; font-weight: 700; color: #1f3d2a;">Asignar Rol:</label>
+                        <select name="rol" class="form-control" style="max-width: 280px;" onchange="aplicarPlantillaPendiente(this, '{{ u.id_usuario }}')">
+                            <option value="operario" selected>Operario de Terreno</option>
+                            <option value="veterinario">Veterinario</option>
+                            <option value="admin">Administrador (Acceso Total)</option>
+                        </select>
+                        <span style="font-size: 0.8rem; color: #5b6e61;">Seleccione los módulos permitidos para este RUT:</span>
+                    </div>
+
+                    <div class="perm-checks-grid" id="gridPendiente_{{ u.id_usuario }}">
+                        <label class="perm-check-label">
+                            <input type="checkbox" name="acceso_rendimiento" class="chk-rendimiento" checked> Ficha y Rendimiento (RFID)
+                        </label>
+                        <label class="perm-check-label">
+                            <input type="checkbox" name="acceso_bovinos" class="chk-bovinos" checked> Registrar Bovinos
+                        </label>
+                        <label class="perm-check-label">
+                            <input type="checkbox" name="acceso_informes" class="chk-informes" checked> Informes e Ingesta RFID
+                        </label>
+                        <label class="perm-check-label">
+                            <input type="checkbox" name="acceso_inseminacion" class="chk-inseminacion"> Inseminación y Preñez
+                        </label>
+                        <label class="perm-check-label">
+                            <input type="checkbox" name="acceso_linaje" class="chk-linaje"> Linaje Sanguíneo
+                        </label>
+                        <label class="perm-check-label">
+                            <input type="checkbox" name="acceso_pajuelas" class="chk-pajuelas"> Mantenedor de Pajuelas
+                        </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="submit" class="btn-primary">Aprobar y Otorgar Permisos</button>
+                    </div>
+                </form>
+                <form method="POST" action="/usuarios/" style="margin-top: 8px; text-align: right;" onsubmit="return confirm('¿Rechazar y eliminar el registro del RUT {{ u.rut }}?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="eliminar_usuario">
+                    <input type="hidden" name="usuario_id" value="{{ u.id_usuario }}">
+                    <button type="submit" class="btn-action btn-action-danger">Rechazar / Eliminar Solicitud</button>
+                </form>
+            </div>
+            {% empty %}
+            <div style="padding: 18px; text-align: center; color: #687c6e; background: #f8fbf9; border-radius: 8px; border: 1px dashed #cfe0d4; font-size: 0.9rem;">
+                No hay usuarios pendientes en la sala de espera en este momento.
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- SECCIÓN 2: USUARIOS CON PERMISOS ACTIVOS + BUSCADOR POR RUT -->
+        <div class="content-card">
+            <div class="page-title">
+                <h2>Usuarios Registrados ({{ usuarios_aprobados|length }})</h2>
+                <form method="GET" action="/usuarios/" class="search-rut-bar" onsubmit="return false;">
+                    <input
+                        type="text"
+                        id="inputBuscarRut"
+                        name="rut"
+                        value="{{ busqueda_rut }}"
+                        class="search-rut-input"
+                        placeholder="Buscar por RUT (ej: 1.111.111-1)..."
+                        oninput="filtrarTablaPorRut(this)"
+                        autocomplete="off"
+                    >
+                    <button type="button" class="btn-action" onclick="limpiarBusquedaRut()">Ver Todos</button>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table id="tablaUsuariosRegistrados">
+                    <thead>
+                        <tr>
+                            <th>RUT</th>
+                            <th>Nombre Completo</th>
+                            <th>Correo Gmail</th>
+                            <th>Rol Asignado</th>
+                            <th>Permisos de Módulos</th>
+                            <th>Acciones de Permisos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in usuarios_aprobados %}
+                        <tr class="fila-usuario-registrado" data-rut="{{ u.rut }}">
+                            <td><strong>{{ u.rut }}</strong></td>
+                            <td>{{ u.nombre_completo }}</td>
+                            <td>{{ u.email|default:"-" }}</td>
+                            <td>
+                                {% if u.rol == 'admin' %}
+                                    <span class="badge badge-admin">Administrador</span>
+                                {% elif u.rol == 'veterinario' %}
+                                    <span class="badge badge-vet">Veterinario</span>
+                                {% else %}
+                                    <span class="badge badge-op">Operario de Terreno</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.rol == 'admin' %}
+                                    <span class="perm-pill">Acceso Total Administrador</span>
+                                {% else %}
+                                    {% if u.acceso_rendimiento %}<span class="perm-pill">Ficha y Rendimiento</span>{% endif %}
+                                    {% if u.acceso_bovinos %}<span class="perm-pill">Registrar Bovinos</span>{% endif %}
+                                    {% if u.acceso_informes %}<span class="perm-pill">Informes / RFID</span>{% endif %}
+                                    {% if u.acceso_inseminacion %}<span class="perm-pill">Inseminación / Preñez</span>{% endif %}
+                                    {% if u.acceso_linaje %}<span class="perm-pill">Linaje Sanguíneo</span>{% endif %}
+                                    {% if u.acceso_pajuelas %}<span class="perm-pill">Mantenedor Pajuelas</span>{% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="row-actions">
+                                    <button type="button" class="btn-action" onclick="abrirModalPermisos(
+                                        '{{ u.id_usuario }}',
+                                        '{{ u.rut|escapejs }}',
+                                        '{{ u.nombre_completo|escapejs }}',
+                                        '{{ u.email|default:''|escapejs }}',
+                                        '{{ u.rol }}',
+                                        {{ u.acceso_rendimiento|yesno:'true,false' }},
+                                        {{ u.acceso_bovinos|yesno:'true,false' }},
+                                        {{ u.acceso_informes|yesno:'true,false' }},
+                                        {{ u.acceso_inseminacion|yesno:'true,false' }},
+                                        {{ u.acceso_linaje|yesno:'true,false' }},
+                                        {{ u.acceso_pajuelas|yesno:'true,false' }}
+                                    )">Modificar Rol / Permisos</button>
+
+                                    <form method="POST" action="/usuarios/" style="display:inline;" onsubmit="return confirm('¿Enviar a {{ u.rut }} de vuelta a la pantalla de espera de permisos?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="accion" value="poner_en_espera">
+                                        <input type="hidden" name="usuario_id" value="{{ u.id_usuario }}">
+                                        <button type="submit" class="btn-action btn-action-warn">Poner en Espera</button>
+                                    </form>
+
+                                    <form method="POST" action="/usuarios/" style="display:inline;" onsubmit="return confirm('¿Está seguro de eliminar el acceso del RUT {{ u.rut }}?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="accion" value="eliminar_usuario">
+                                        <input type="hidden" name="usuario_id" value="{{ u.id_usuario }}">
+                                        <button type="submit" class="btn-action btn-action-danger">Eliminar</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">No hay usuarios con permisos activos.</td>
+                        </tr>
+                        {% endfor %}
+                        <tr id="filaSinResultadosRut" style="display: none;">
+                            <td colspan="6" style="text-align: center; padding: 22px; color: var(--text-muted);">No se encontraron usuarios registrados con ese RUT.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL PARA MODIFICAR ROL Y PERMISOS -->
+    <div class="modal-overlay" id="modalPermisos">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modalTitulo">Modificar Rol y Permisos</h3>
+                <button type="button" onclick="cerrarModalPermisos()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;">&times;</button>
+            </div>
+            <form method="POST" action="/usuarios/">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="asignar_permisos">
+                <input type="hidden" name="usuario_id" id="edit_usuario_id">
+
+                <div style="background: #f4f9f6; border: 1px solid #cfe0d4; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.88rem;">
+                    <div><strong>RUT:</strong> <span id="edit_info_rut"></span> &middot; <strong>Usuario:</strong> <span id="edit_info_nombre"></span></div>
+                    <div style="margin-top: 4px; color: #4d6355;"><strong>Correo Gmail:</strong> <span id="edit_info_email"></span></div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#1f3d2a;">Rol Asignado:</label>
+                    <select name="rol" id="edit_rol" class="form-control" onchange="aplicarPlantillaModal()">
+                        <option value="operario">Operario de Terreno</option>
+                        <option value="veterinario">Veterinario</option>
+                        <option value="admin">Administrador (Control Total)</option>
+                    </select>
+                </div>
+
+                <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#1f3d2a;">Módulos Autorizados:</label>
+                <div class="perm-checks-grid">
+                    <label class="perm-check-label"><input type="checkbox" name="acceso_rendimiento" id="edit_chk_rendimiento"> Ficha y Rendimiento</label>
+                    <label class="perm-check-label"><input type="checkbox" name="acceso_bovinos" id="edit_chk_bovinos"> Registrar Bovinos</label>
+                    <label class="perm-check-label"><input type="checkbox" name="acceso_informes" id="edit_chk_informes"> Informes / RFID</label>
+                    <label class="perm-check-label"><input type="checkbox" name="acceso_inseminacion" id="edit_chk_inseminacion"> Inseminación / Preñez</label>
+                    <label class="perm-check-label"><input type="checkbox" name="acceso_linaje" id="edit_chk_linaje"> Linaje Sanguíneo</label>
+                    <label class="perm-check-label"><input type="checkbox" name="acceso_pajuelas" id="edit_chk_pajuelas"> Mantenedor Pajuelas</label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+                    <button type="button" class="btn-action" onclick="cerrarModalPermisos()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Rol y Permisos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+        });
+
+        const PLANTILLAS = {
+            'operario': { rendimiento: true, bovinos: true, informes: true, inseminacion: false, linaje: false, pajuelas: false },
+            'veterinario': { rendimiento: true, bovinos: false, informes: true, inseminacion: true, linaje: true, pajuelas: true },
+            'admin': { rendimiento: true, bovinos: true, informes: true, inseminacion: true, linaje: true, pajuelas: true }
+        };
+
+        function normalizarTextoRut(val) {
+            return (val || '').replace(/[^0-9kK]/g, '').toUpperCase();
+        }
+
+        function filtrarTablaPorRut(inputEl) {
+            const raw = (inputEl.value || '').trim();
+            const qNorm = normalizarTextoRut(raw);
+            const qLower = raw.toLowerCase();
+
+            const filas = document.querySelectorAll('.fila-usuario-registrado');
+            let visibles = 0;
+            filas.forEach(function(tr) {
+                const rutFila = tr.getAttribute('data-rut') || '';
+                const rutFilaNorm = normalizarTextoRut(rutFila);
+                const coincide = !raw || rutFila.toLowerCase().indexOf(qLower) !== -1 || (qNorm && rutFilaNorm.indexOf(qNorm) !== -1);
+                tr.style.display = coincide ? '' : 'none';
+                if (coincide) visibles++;
+            });
+
+            const filaVacia = document.getElementById('filaSinResultadosRut');
+            if (filaVacia) {
+                filaVacia.style.display = (filas.length > 0 && visibles === 0) ? '' : 'none';
+            }
+
+            // También filtra tarjetas pendientes si existen
+            document.querySelectorAll('.item-usuario-buscable').forEach(function(card) {
+                const rutCard = card.getAttribute('data-rut') || '';
+                const rutCardNorm = normalizarTextoRut(rutCard);
+                const coincide = !raw || rutCard.toLowerCase().indexOf(qLower) !== -1 || (qNorm && rutCardNorm.indexOf(qNorm) !== -1);
+                card.style.display = coincide ? '' : 'none';
+            });
+        }
+
+        function limpiarBusquedaRut() {
+            const input = document.getElementById('inputBuscarRut');
+            if (input) {
+                input.value = '';
+                filtrarTablaPorRut(input);
+                input.focus();
+            }
+        }
+
+        function aplicarPlantillaPendiente(selectEl, uid) {
+            const p = PLANTILLAS[selectEl.value] || PLANTILLAS['operario'];
+            const container = document.getElementById('gridPendiente_' + uid);
+            if (!container) return;
+            container.querySelector('.chk-rendimiento').checked = p.rendimiento;
+            container.querySelector('.chk-bovinos').checked = p.bovinos;
+            container.querySelector('.chk-informes').checked = p.informes;
+            container.querySelector('.chk-inseminacion').checked = p.inseminacion;
+            container.querySelector('.chk-linaje').checked = p.linaje;
+            container.querySelector('.chk-pajuelas').checked = p.pajuelas;
+        }
+
+        function aplicarPlantillaModal() {
+            const rol = document.getElementById('edit_rol').value;
+            const p = PLANTILLAS[rol] || PLANTILLAS['operario'];
+            document.getElementById('edit_chk_rendimiento').checked = p.rendimiento;
+            document.getElementById('edit_chk_bovinos').checked = p.bovinos;
+            document.getElementById('edit_chk_informes').checked = p.informes;
+            document.getElementById('edit_chk_inseminacion').checked = p.inseminacion;
+            document.getElementById('edit_chk_linaje').checked = p.linaje;
+            document.getElementById('edit_chk_pajuelas').checked = p.pajuelas;
+        }
+
+        function abrirModalPermisos(id, rut, nombre, email, rol, rend, bov, inf, ins, lin, paj) {
+            document.getElementById('edit_usuario_id').value = id;
+            document.getElementById('edit_info_rut').textContent = rut;
+            document.getElementById('edit_info_nombre').textContent = nombre;
+            document.getElementById('edit_info_email').textContent = email || 'Sin correo';
+            document.getElementById('edit_rol').value = rol;
+            document.getElementById('edit_chk_rendimiento').checked = rend;
+            document.getElementById('edit_chk_bovinos').checked = bov;
+            document.getElementById('edit_chk_informes').checked = inf;
+            document.getElementById('edit_chk_inseminacion').checked = ins;
+            document.getElementById('edit_chk_linaje').checked = lin;
+            document.getElementById('edit_chk_pajuelas').checked = paj;
+            document.getElementById('modalPermisos').classList.add('active');
+        }
+
+        function cerrarModalPermisos() {
+            document.getElementById('modalPermisos').classList.remove('active');
+        }
+    </script>
+</body>
+</html>

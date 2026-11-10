@@ -62,13 +62,14 @@
         .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
         
         /* KPIs */
-        .kpi-container { display: flex; gap: 15px; margin-bottom: 30px; }
+        .kpi-container { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
         .kpi-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 20px 15px;
             flex: 1;
+            min-width: 180px;
             text-align: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
@@ -77,40 +78,169 @@
         .kpi-card .desc { font-size: 0.75rem; color: #a0a0a0; margin-top: 8px; }
         
         /* Charts */
-        .charts-container { display: flex; gap: 20px; margin-bottom: 30px; }
+        .charts-container { display: grid; grid-template-columns: 1.2fr 1.2fr 0.85fr; gap: 18px; margin-bottom: 25px; }
         .chart-box {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 20px;
+            padding: 18px 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             display: flex;
             flex-direction: column;
         }
-        .chart-box.large { flex: 2; }
-        .chart-box.small { flex: 1; }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        .chart-header h3 { font-size: 1rem; color: var(--text-main); font-weight: 600; }
-        .chart-filter { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; outline: none; background-color: #fff; cursor: pointer; }
-        .canvas-container { position: relative; height: 220px; width: 100%; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; gap: 10px; }
+        .chart-header h3 { font-size: 0.96rem; color: var(--text-main); font-weight: 600; }
+        .chart-filter { padding: 6px 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.82rem; outline: none; background-color: #fff; cursor: pointer; }
+        .canvas-container { position: relative; height: 215px; width: 100%; }
         
         /* Bottom Layout */
-        .bottom-layout { display: flex; gap: 20px; }
-        .quick-actions { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .bottom-layout { display: grid; grid-template-columns: 1fr 1.45fr; gap: 22px; margin-bottom: 30px; align-items: start; }
+        .left-column { display: flex; flex-direction: column; gap: 18px; }
+        .right-column { display: flex; flex-direction: column; gap: 18px; }
+        .quick-actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .btn-action {
             background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--primary);
-            padding: 18px; text-align: center; text-decoration: none; font-size: 0.95rem; font-weight: 600;
+            padding: 14px 12px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600;
             border-radius: 8px; transition: all 0.2s; cursor: pointer; display: flex; justify-content: center; align-items: center;
         }
         .btn-action:hover { background-color: var(--primary); color: white; }
+
+        .panel-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 22px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .panel-card h3 {
+            font-size: 1rem;
+            color: var(--text-main);
+            font-weight: 600;
+            margin-bottom: 14px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-subtitle {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Ficha descriptiva de Bovino (Vaca / Toro) */
+        .bovino-filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .bovino-type-btn {
+            flex: 1;
+            padding: 7px 10px;
+            border: 1px solid #cfe0d4;
+            background: #f4f8f5;
+            color: var(--primary);
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .bovino-type-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .bovino-detail-card {
+            background: #f8fbf9;
+            border: 1px solid #dce8df;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        .bovino-meta-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed #cfe0d4;
+        }
+        .bovino-rfid-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .bovino-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .stat-mini-box {
+            background: #ffffff;
+            border: 1px solid #e3ece5;
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+        .stat-mini-box .lbl {
+            font-size: 0.74rem;
+            color: #6b7c70;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .stat-mini-box .val {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stat-mini-box .val.danger { color: #c62828; }
+        .stat-mini-box .val.success { color: #2e7d32; }
+
+        /* Tabla de Éxito de Pajuelas */
+        .pajuela-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.86rem;
+        }
+        .pajuela-table th, .pajuela-table td {
+            padding: 11px 10px;
+            text-align: left;
+            border-bottom: 1px solid #edf2ee;
+        }
+        .pajuela-table th {
+            background: #f6faf7;
+            color: #5c6f62;
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .progress-track {
+            width: 100%;
+            height: 7px;
+            background: #e9efeb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1a6b3d, #2e7d32);
+            border-radius: 4px;
+        }
         
-        .recent-box { flex: 2; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; }
-        .recent-box h3 { font-size: 1rem; margin-bottom: 15px; color: var(--text-main); font-weight: 600; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .recent-list { list-style: none; }
         .recent-list li { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 10px 0; border-bottom: 1px dashed #eee; }
         .recent-list li:last-child { border-bottom: none; }
         .recent-list span.id-text { font-weight: 600; color: var(--text-main); }
-        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; background-color: #e8f5e9; color: #2e7d32; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; background-color: #e8f5e9; color: #2e7d32; }
+        .badge-danger { background-color: #ffebee; color: #c62828; }
+
+        @media (max-width: 1150px) {
+            .charts-container { grid-template-columns: 1fr; }
+            .bottom-layout { grid-template-columns: 1fr; }
+        }
     </style>
     {% include "gestor_biologica_monco/_parcela_estilos.html" %}
 </head>
@@ -125,6 +255,7 @@
         </div>
         <ul class="menu-links">
             <li><a href="/inicio/" class="active">Panel General</a></li>
+            <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
             <li>
                 <a href="/inseminacion/">Inseminación</a>
                 <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
@@ -179,14 +310,29 @@
             </div>
         </div>
 
+        <!-- Fila de Gráficos: Mortalidad Neonatal, Curva de Nacimientos y Proporción por Sexo -->
         <div class="charts-container">
-            <div class="chart-box large">
+            <div class="chart-box">
                 <div class="chart-header">
-                    <h3>Curva de Nacimientos</h3>
+                    <h3>Mortalidad Neonatal (Parto)</h3>
+                    <select class="chart-filter" id="filtroMortalidad" onchange="actualizarGraficoMortalidad()">
+                        <option value="dia">Por Día (Últimos 7 días)</option>
+                        <option value="mes" selected>Por Mes (Año actual)</option>
+                        <option value="ano">Por Año (Últimos 5 años)</option>
+                    </select>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="chartMortalidad"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <div class="chart-header">
+                    <h3>Curva de Nacimientos Vivos</h3>
                     <select class="chart-filter" id="filtroTiempo" onchange="actualizarGraficoNacimientos()">
-                        <option value="ano">Por Año (Últimos 5)</option>
-                        <option value="mes" selected>Por Mes (Actual)</option>
-                        <option value="semana">Por Semana</option>
+                        <option value="dia">Por Día (Últimos 7 días)</option>
+                        <option value="mes" selected>Por Mes (Año actual)</option>
+                        <option value="ano">Por Año (Últimos 5 años)</option>
                     </select>
                 </div>
                 <div class="canvas-container">
@@ -194,25 +340,56 @@
                 </div>
             </div>
 
-            <div class="chart-box small">
+            <div class="chart-box">
                 <div class="chart-header">
-                    <h3>Proporción por Sexo (Crías)</h3>
+                    <h3>Proporción por Sexo</h3>
                 </div>
-                <div class="canvas-container" style="display: flex; justify-content: center; height: 200px;">
+                <div class="canvas-container" style="display: flex; justify-content: center; height: 205px;">
                     <canvas id="chartSexo"></canvas>
                 </div>
             </div>
         </div>
 
         <div class="bottom-layout">
-            <div class="quick-actions">
-                <a href="/linaje/" class="btn-action" style="background-color: var(--primary); color: white;">Consultar Linaje Sanguíneo</a>
-                <a href="/informes/" class="btn-action">Generar Reporte Excel</a>
-                
-                <!-- Nuevo módulo de registro rápido -->
-                <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; background-color: var(--card-bg); margin-top: 5px;">
-                    <h3 style="font-size: 1rem; color: var(--text-main); font-weight: 600; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Agregar Nuevo Bovino</h3>
-                    
+            <!-- COLUMNA IZQUIERDA: Descripción de Bovino (Vaca / Toro) + Registro Rápido -->
+            <div class="left-column">
+                <!-- Casilla Izquierda: Ficha Descriptiva y Rendimiento de Bovino -->
+                <div class="panel-card">
+                    <h3>
+                        <span>Descripción y Rendimiento de Bovino</span>
+                        <span class="panel-subtitle">Vacas y Toros</span>
+                    </h3>
+
+                    <div class="bovino-filter-bar">
+                        <button type="button" class="bovino-type-btn active" id="btnFiltroTodos" onclick="filtrarSelectorBovinos('todos')">Todos</button>
+                        <button type="button" class="bovino-type-btn" id="btnFiltroHembras" onclick="filtrarSelectorBovinos('Hembra')">Vacas (Hembras)</button>
+                        <button type="button" class="bovino-type-btn" id="btnFiltroMachos" onclick="filtrarSelectorBovinos('Macho')">Toros (Machos)</button>
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 5px; color: var(--text-main);">Buscar por Código RFID</label>
+                        <input type="text" id="inputBuscarRfidDashboard" oninput="filtrarSelectorBovinos(filtroSexoActual)" placeholder="Escriba el código RFID o raza..." style="width: 100%; padding: 9px 11px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.88rem; outline: none; background-color: #fff;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 6px; color: var(--text-main);">Seleccione Vaca o Toro Registrado</label>
+                        <select id="selectBovinoInspector" onchange="mostrarDetalleBovino()" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; outline: none; background-color: #fff;">
+                        </select>
+                    </div>
+
+                    <div id="contenedorDetalleBovino" class="bovino-detail-card">
+                        <!-- Se completa dinámicamente según el bovino seleccionado -->
+                    </div>
+                </div>
+
+                <div class="quick-actions-row">
+                    <a href="/linaje/" class="btn-action" style="background-color: var(--primary); color: white;">Consultar Linaje Sanguíneo</a>
+                    <a href="/informes/" class="btn-action">Generar Reporte Excel</a>
+                </div>
+
+                <!-- Módulo de registro rápido -->
+                <div class="panel-card">
+                    <h3>Agregar Nuevo Bovino</h3>
                     <form action="/bovino/nuevo/" method="GET" style="display: flex; flex-direction: column; gap: 12px;">
                         <div>
                             <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: var(--text-main);">Clasificación del Animal</label>
@@ -239,21 +416,76 @@
                 </div>
             </div>
             
-            <div class="recent-box">
-                <h3>Últimos Registros RFID</h3>
-                <ul class="recent-list">
-                    {% for ingreso in ultimos_ingresos %}
-                    <li>
-                        <span class="id-text">ID: {{ ingreso.codigo_rfid }}</span> 
-                        <span style="color:var(--text-muted);">{{ ingreso.sexo }} - {{ ingreso.estado_actual }}</span>
-                        <span class="badge">{{ ingreso.fecha_nacimiento|date:"d M Y" }}</span>
-                    </li>
-                    {% empty %}
-                    <li>
-                        <span class="id-text">Sin registros recientes</span> 
-                    </li>
-                    {% endfor %}
-                </ul>
+            <!-- COLUMNA DERECHA: Rendimiento de Pajuelas de Semen + Últimos Registros -->
+            <div class="right-column">
+                <div class="panel-card">
+                    <h3>
+                        <span>Efectividad de Lotes de Pajuelas en Inseminación</span>
+                        <a href="/pajuelas/" style="font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 600;">Ver Inventario &rarr;</a>
+                    </h3>
+                    <div style="overflow-x: auto;">
+                        <table class="pajuela-table">
+                            <thead>
+                                <tr>
+                                    <th>Lote Pajuela</th>
+                                    <th>Toro / Procedencia</th>
+                                    <th>Stock Actual</th>
+                                    <th>Inyectadas</th>
+                                    <th>Éxitos (Preñez)</th>
+                                    <th>Efectividad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in pajuelas_metricas %}
+                                <tr>
+                                    <td><strong>{{ p.lote_pajuela }}</strong></td>
+                                    <td>{{ p.origen }}</td>
+                                    <td>
+                                        <span class="badge {% if p.stock <= 10 %}badge-danger{% endif %}">{{ p.stock }} disp.</span>
+                                    </td>
+                                    <td>{{ p.usos }} serv.</td>
+                                    <td>
+                                        <strong>{{ p.exitos }}</strong> preñeces
+                                        {% if p.mortinatos > 0 %}
+                                            <span style="font-size: 0.74rem; color: #c62828; display: block;">({{ p.mortinatos }} mortinato)</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="min-width: 110px;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--primary);">
+                                            <span>{{ p.tasa_exito }}%</span>
+                                            <span style="color: #888; font-weight: 500;">({{ p.exitos }}/{{ p.usos }})</span>
+                                        </div>
+                                        <div class="progress-track">
+                                            <div class="progress-fill" style="width: {{ p.tasa_exito }}%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">No hay lotes de pajuelas registrados.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <h3>Últimos Registros RFID</h3>
+                    <ul class="recent-list">
+                        {% for ingreso in ultimos_ingresos %}
+                        <li>
+                            <span class="id-text">ID: {{ ingreso.codigo_rfid }}</span> 
+                            <span style="color:var(--text-muted);">{{ ingreso.sexo }} - {{ ingreso.estado_actual }}</span>
+                            <span class="badge">{{ ingreso.fecha_nacimiento|date:"d M Y" }}</span>
+                        </li>
+                        {% empty %}
+                        <li>
+                            <span class="id-text">Sin registros recientes</span> 
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -283,22 +515,24 @@
             } catch (e) {}
         })();
 
-        // Datos inyectados desde Django views.py
-        const labelsMeses = {{ chart_labels_meses|safe|default:"[]" }};
-        const dataNacimientosMes = {{ chart_data_nacimientos|safe|default:"[]" }};
+        // Series dinámicas para Día, Mes y Año
+        const chartSeries = {{ chart_series_json|safe|default:"{}" }};
         const dataSexos = {{ chart_data_sexos|safe|default:"[0, 0]" }};
+        const bovinosMetricas = {{ bovinos_metricas_json|safe|default:"[]" }};
 
-        const ctxNacimientos = document.getElementById('chartNacimientos').getContext('2d');
-        let chartNacimientos = new Chart(ctxNacimientos, {
+        // 1. Gráfico de Mortalidad Neonatal (Terneros recién nacidos fallecidos en el parto)
+        const ctxMortalidad = document.getElementById('chartMortalidad').getContext('2d');
+        const serieMortInicial = (chartSeries && chartSeries.mes) ? chartSeries.mes : { labels: [], mortalidad: [] };
+        let chartMortalidad = new Chart(ctxMortalidad, {
             type: 'bar',
             data: {
-                labels: labelsMeses,
+                labels: serieMortInicial.labels,
                 datasets: [{
-                    label: 'Partos Registrados',
-                    data: dataNacimientosMes,
-                    backgroundColor: '#1a6b3d',
+                    label: 'Terneros Fallecidos en Parto',
+                    data: serieMortInicial.mortalidad,
+                    backgroundColor: '#c62828',
                     borderRadius: 4,
-                    barPercentage: 0.6
+                    barPercentage: 0.55
                 }]
             },
             options: {
@@ -306,12 +540,57 @@
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#eaeaea' }, ticks: { font: { size: 11 } } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#eaeaea' } },
                     x: { grid: { display: false }, ticks: { font: { size: 11 } } }
                 }
             }
         });
 
+        function actualizarGraficoMortalidad() {
+            const periodo = document.getElementById('filtroMortalidad').value;
+            if (chartSeries && chartSeries[periodo]) {
+                chartMortalidad.data.labels = chartSeries[periodo].labels;
+                chartMortalidad.data.datasets[0].data = chartSeries[periodo].mortalidad;
+                chartMortalidad.update();
+            }
+        }
+
+        // 2. Gráfico de Nacimientos Vivos
+        const ctxNacimientos = document.getElementById('chartNacimientos').getContext('2d');
+        const serieNacInicial = (chartSeries && chartSeries.mes) ? chartSeries.mes : { labels: [], nacimientos: [] };
+        let chartNacimientos = new Chart(ctxNacimientos, {
+            type: 'bar',
+            data: {
+                labels: serieNacInicial.labels,
+                datasets: [{
+                    label: 'Partos Vivos Registrados',
+                    data: serieNacInicial.nacimientos,
+                    backgroundColor: '#1a6b3d',
+                    borderRadius: 4,
+                    barPercentage: 0.55
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#eaeaea' } },
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                }
+            }
+        });
+
+        function actualizarGraficoNacimientos() {
+            const periodo = document.getElementById('filtroTiempo').value;
+            if (chartSeries && chartSeries[periodo]) {
+                chartNacimientos.data.labels = chartSeries[periodo].labels;
+                chartNacimientos.data.datasets[0].data = chartSeries[periodo].nacimientos;
+                chartNacimientos.update();
+            }
+        }
+
+        // 3. Gráfico Proporción por Sexo
         const ctxSexo = document.getElementById('chartSexo').getContext('2d');
         new Chart(ctxSexo, {
             type: 'doughnut',
@@ -327,16 +606,123 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '75%',
+                cutout: '72%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 }, padding: 20 } }
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 }, padding: 15 } }
                 }
             }
         });
 
-        function actualizarGraficoNacimientos() {
-            console.log("Filtro cambiado. En producción, conectar vía Fetch API a Django.");
+        // 4. Inspector de Descripción y Rendimiento de Bovinos (Vacas y Toros)
+        let filtroSexoActual = 'todos';
+
+        function filtrarSelectorBovinos(sexo) {
+            filtroSexoActual = sexo;
+            document.getElementById('btnFiltroTodos').classList.toggle('active', sexo === 'todos');
+            document.getElementById('btnFiltroHembras').classList.toggle('active', sexo === 'Hembra');
+            document.getElementById('btnFiltroMachos').classList.toggle('active', sexo === 'Macho');
+
+            const select = document.getElementById('selectBovinoInspector');
+            select.innerHTML = '';
+
+            const inputRfid = document.getElementById('inputBuscarRfidDashboard');
+            const termino = inputRfid ? (inputRfid.value || '').trim().toUpperCase() : '';
+
+            const filtrados = bovinosMetricas.filter(function(b) {
+                const pasaSexo = sexo === 'todos' ? true : b.sexo === sexo;
+                const pasaTexto = !termino || b.codigo_rfid.toUpperCase().indexOf(termino) !== -1 || b.raza.toUpperCase().indexOf(termino) !== -1;
+                return pasaSexo && pasaTexto;
+            });
+
+            if (filtrados.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No hay bovinos registrados en esta categoría';
+                select.appendChild(opt);
+                mostrarDetalleBovino();
+                return;
+            }
+
+            filtrados.forEach(function(b) {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                const tipoLabel = b.sexo === 'Hembra' ? 'Vaca' : 'Toro';
+                opt.textContent = tipoLabel + ': ' + b.codigo_rfid + ' | Raza: ' + b.raza + ' (' + b.estado_actual + ')';
+                select.appendChild(opt);
+            });
+
+            mostrarDetalleBovino();
         }
+
+        function mostrarDetalleBovino() {
+            const select = document.getElementById('selectBovinoInspector');
+            const contenedor = document.getElementById('contenedorDetalleBovino');
+            const idSel = parseInt(select.value, 10);
+
+            const bov = bovinosMetricas.find(function(item) { return item.id === idSel; });
+            if (!bov) {
+                contenedor.innerHTML = '<div style="text-align: center; color: #888; font-size: 0.88rem; padding: 12px;">Seleccione un ejemplar para visualizar sus indicadores reproductivos.</div>';
+                return;
+            }
+
+            if (bov.sexo === 'Hembra') {
+                contenedor.innerHTML =
+                    '<div class="bovino-meta-header">' +
+                        '<div>' +
+                            '<div class="bovino-rfid-title">Vaca RFID: ' + bov.codigo_rfid + '</div>' +
+                            '<div style="font-size: 0.8rem; color: #666;">Raza: ' + bov.raza + ' | Nac.: ' + bov.fecha_nacimiento + '</div>' +
+                        '</div>' +
+                        '<span class="badge">' + bov.estado_actual + '</span>' +
+                    '</div>' +
+                    '<div class="bovino-stats-grid">' +
+                        '<div class="stat-mini-box">' +
+                            '<div class="lbl">Inseminaciones Recibidas</div>' +
+                            '<div class="val">' + bov.total_inseminaciones + '</div>' +
+                        '</div>' +
+                        '<div class="stat-mini-box">' +
+                            '<div class="lbl">Inseminaciones Exitosas</div>' +
+                            '<div class="val success">' + bov.preneces_exitosas + ' (' + bov.tasa_exito + '%)</div>' +
+                        '</div>' +
+                        '<div class="stat-mini-box">' +
+                            '<div class="lbl">Tasa Mortalidad en Parto</div>' +
+                            '<div class="val danger">' + bov.tasa_mortalidad + '%</div>' +
+                        '</div>' +
+                        '<div class="stat-mini-box">' +
+                            '<div class="lbl">Terneros Fallecidos / Vivos</div>' +
+                            '<div class="val">' + bov.mortinatos + ' / ' + bov.partos_vivos + '</div>' +
+                        '</div>' +
+                    '</div>';
+            } else {
+                contenedor.innerHTML =
+                    '<div class="bovino-meta-header">' +
+                        '<div>' +
+                            '<div class="bovino-rfid-title">Toro RFID: ' + bov.codigo_rfid + '</div>' +
+                            '<div style="font-size: 0.8rem; color: #666;">Raza: ' + bov.raza + ' | Nac.: ' + bov.fecha_nacimiento + '</div>' +
+                        '</div>' +
+                        '<span class="badge">' + bov.estado_actual + '</span>' +
+                    '</div>' +
+                    '<div class="bovino-stats-grid">' +
+                        '<div class="stat-mini-box">' +
+                            '<div class="lbl">Pajuelas Extraídas (Stock / Total)</div>' +
+                            '<div class="val">' + bov.stock_actual_pajuelas + ' / ' + bov.pajuelas_extraidas_total + '</div>' +
+                        '</div>' +
+                        '<div class="stat-mini-box">' +
+                            '<div class="lbl">Lotes Registrados</div>' +
+                            '<div class="val">' + bov.lotes_extraidos + ' lotes</div>' +
+                        '</div>' +
+                        '<div class="stat-mini-box">' +
+                            '<div class="lbl">Inseminaciones con su Semen</div>' +
+                            '<div class="val">' + bov.inseminaciones_con_su_semen + '</div>' +
+                        '</div>' +
+                        '<div class="stat-mini-box">' +
+                            '<div class="lbl">Inseminaciones con Éxito</div>' +
+                            '<div class="val success">' + bov.inseminaciones_exitosas + ' (' + bov.tasa_exito + '%)</div>' +
+                        '</div>' +
+                    '</div>';
+            }
+        }
+
+        filtrarSelectorBovinos('todos');
     </script>
 </body>
 </html>

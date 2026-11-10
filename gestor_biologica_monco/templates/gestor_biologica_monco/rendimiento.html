@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrícola Moncopulli - Ficha y Rendimiento Reproductivo</title>
+    <style>
+        :root {
+            --primary: #0f4a29;
+            --primary-light: #1a6b3d;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border-color: #eaeaea;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            position: fixed;
+            height: 100%;
+            z-index: 1000;
+            transform: translateX(0);
+        }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 1.2rem; font-weight: 600; }
+        .menu-links { list-style: none; padding: 0 15px; flex-grow: 1; }
+        .menu-links li { margin-bottom: 10px; }
+        .menu-links a { color: white; text-decoration: none; display: block; padding: 12px 15px; border-radius: 6px; font-size: 0.95rem; transition: background 0.2s; }
+        .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
+        .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.expanded { margin-left: 0; }
+
+        .menu-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary); display: flex; align-items: center; gap: 15px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
+        .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
+
+        /* Sector de Búsqueda por Código RFID e Inspector Individual */
+        .rfid-search-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 24px 28px;
+            margin-bottom: 22px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .rfid-search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .rfid-search-header h2 {
+            font-size: 1.18rem;
+            color: var(--primary);
+        }
+        .rfid-search-bar {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr auto auto;
+            gap: 12px;
+            align-items: center;
+        }
+        .rfid-input, .rfid-select {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid #c5d6ca;
+            border-radius: 6px;
+            font-size: 0.92rem;
+            outline: none;
+            background-color: #fff;
+        }
+        .rfid-input:focus, .rfid-select:focus {
+            border-color: var(--primary);
+        }
+        .btn-rfid-search {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 11px 20px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-rfid-search:hover { background-color: var(--primary-light); }
+        .btn-rfid-clear {
+            background-color: #f2f6f3;
+            color: #4b5e51;
+            border: 1px solid #d4e0d7;
+            padding: 11px 16px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-rfid-clear:hover { background-color: #e4eee7; }
+
+        /* Ficha Individual Desplegable */
+        .ficha-individual-box {
+            margin-top: 18px;
+            background: #f6faf7;
+            border: 1px solid #cfe0d4;
+            border-radius: 8px;
+            padding: 20px 22px;
+        }
+        .ficha-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+            border-bottom: 1px dashed #bfd4c5;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .ficha-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .ficha-meta {
+            font-size: 0.86rem;
+            color: #55685b;
+            margin-top: 3px;
+        }
+        .ficha-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .ficha-metric-item {
+            background: #ffffff;
+            border: 1px solid #dce8df;
+            border-radius: 7px;
+            padding: 12px 14px;
+        }
+        .ficha-metric-item .m-label {
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #697b6e;
+            margin-bottom: 5px;
+        }
+        .ficha-metric-item .m-val {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .ficha-metric-item .m-val.danger { color: #c62828; }
+        .ficha-metric-item .m-val.success { color: #2e7d32; }
+
+        .section-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+        .section-tab-btn {
+            padding: 10px 20px;
+            border-radius: 7px;
+            border: 1px solid #cad8ce;
+            background: #ffffff;
+            color: var(--primary);
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .section-tab-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .content-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 26px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .content-card h2 {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+        .content-card p.sub {
+            font-size: 0.86rem;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+        }
+
+        .table-container { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 13px 14px; border-bottom: 1px solid var(--border-color); font-size: 0.88rem; }
+        th { background-color: #f6faf7; color: #54685b; font-weight: 700; text-transform: uppercase; font-size: 0.76rem; }
+        tr:hover { background-color: #fbfdfb; }
+        tr.fila-destacada { background-color: #eef7f0; }
+
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.74rem; font-weight: 600; background-color: #e8f5e9; color: #2e7d32; display: inline-block; }
+        .badge-danger { background-color: #ffebee; color: #c62828; }
+        .badge-neutral { background-color: #eef3f0; color: #3d5245; }
+
+        .progress-track {
+            width: 110px;
+            height: 7px;
+            background: #e9efeb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1a6b3d, #2e7d32);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 960px) {
+            .rfid-search-bar { grid-template-columns: 1fr; }
+            .ficha-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+    {% include "gestor_biologica_monco/_parcela_estilos.html" %}
+</head>
+<body>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-logo"><img src="/static/gestor_biologica_monco/img/logo_moncopulli.jpg" alt="Logo Agrícola Moncopulli"></div>
+            <h2>Agrícola Moncopulli</h2>
+            <span class="brand-sub">Parcela &amp; Ganadería</span>
+        </div>
+        <ul class="menu-links">
+            <li><a href="/inicio/">Panel General</a></li>
+            <li><a href="/rendimiento/" class="active">Ficha y Rendimiento</a></li>
+            <li>
+                <a href="/inseminacion/">Inseminación</a>
+                <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
+                    <li><a href="/inseminacion/diagnostico/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Diagnóstico de Preñez</a></li>
+                </ul>
+            </li>
+            <li><a href="/linaje/">Linaje Sanguíneo</a></li>
+            <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
+            <li><a href="/informes/">Informes</a></li>
+        </ul>
+        <div class="logout">
+            <ul class="menu-links" style="padding:0;">
+                <li><a href="/login/">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        <div class="top-bar">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Ficha Descriptiva y Rendimiento Reproductivo</span>
+            </button>
+            <div class="user-status">
+                <span class="status-dot"></span> Sincronizado | {{ user.username|default:"Administrador" }}
+            </div>
+        </div>
+
+        {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
+
+        <!-- BUSCADOR POR CÓDIGO RFID E INSPECTOR INDIVIDUAL -->
+        <div class="rfid-search-card">
+            <div class="rfid-search-header">
+                <div>
+                    <h2>Buscador de Ficha Individual por Código RFID</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">Ingrese el código RFID de la vaca o toro (o selecciónelo del listado) para consultar su descripción y filtrar las tablas.</p>
+                </div>
+            </div>
+
+            <div class="rfid-search-bar">
+                <input type="text" id="inputBuscarRfid" class="rfid-input" placeholder="Escriba código RFID, raza o lote (ej. DEMO-MONCO-VACA-001)..." oninput="ejecutarBusquedaRfid()">
+                <select id="selectDirectoRfid" class="rfid-select" onchange="seleccionarDesdeDropdown()">
+                    <option value="">-- Seleccionar Bovino por RFID --</option>
+                    {% for b in bovinos_metricas %}
+                        <option value="{{ b.codigo_rfid }}">{{ b.sexo }}: {{ b.codigo_rfid }} ({{ b.raza }} - {{ b.estado_actual }})</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn-rfid-search" onclick="ejecutarBusquedaRfid()">Buscar RFID</button>
+                <button type="button" class="btn-rfid-clear" onclick="limpiarBusquedaRfid()">Limpiar</button>
+            </div>
+
+            <!-- Panel de Ficha Individual del Bovino Encontrado -->
+            <div id="fichaIndividualContainer" class="ficha-individual-box" style="display: none;">
+            </div>
+        </div>
+
+        <div class="section-tabs">
+            <button type="button" class="section-tab-btn active" id="tabBtnTodos" onclick="mostrarSeccion('todos')">Vista Completa</button>
+            <button type="button" class="section-tab-btn" id="tabBtnVacas" onclick="mostrarSeccion('vacas')">Descripción de Vacas ({{ vacas_metricas|length }})</button>
+            <button type="button" class="section-tab-btn" id="tabBtnToros" onclick="mostrarSeccion('toros')">Descripción de Toros ({{ toros_metricas|length }})</button>
+            <button type="button" class="section-tab-btn" id="tabBtnPajuelas" onclick="mostrarSeccion('pajuelas')">Éxito por Lote de Pajuelas ({{ pajuelas_metricas|length }})</button>
+        </div>
+
+        <!-- SECCIÓN 1: VACAS (HEMBRAS) -->
+        <div class="content-card" id="seccionVacas">
+            <h2>Descripción e Indicadores Reproductivos de Vacas (Hembras)</h2>
+            <p class="sub">Historial de inseminaciones, efectividad de preñez y tasa de mortalidad neonatal en el parto por cada hembra registrada.</p>
+            <div class="table-container">
+                <table id="tablaVacas">
+                    <thead>
+                        <tr>
+                            <th>RFID Vaca</th>
+                            <th>Raza</th>
+                            <th>Estado Actual</th>
+                            <th>Inseminaciones</th>
+                            <th>Preñeces Exitosas</th>
+                            <th>Vacías</th>
+                            <th>Terneros Fallecidos (Parto)</th>
+                            <th>Tasa Mortalidad</th>
+                            <th>Efectividad Preñez</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in vacas_metricas %}
+                        <tr class="fila-buscable" data-rfid="{{ v.codigo_rfid|upper }}" data-texto="{{ v.codigo_rfid|upper }} {{ v.raza|upper }} {{ v.estado_actual|upper }}" onclick="seleccionarBovinoPorRfid('{{ v.codigo_rfid }}')" style="cursor: pointer;" title="Haga clic para ver la ficha completa de esta vaca">
+                            <td><strong>{{ v.codigo_rfid }}</strong></td>
+                            <td>{{ v.raza }}</td>
+                            <td><span class="badge badge-neutral">{{ v.estado_actual }}</span></td>
+                            <td><strong>{{ v.total_inseminaciones }}</strong> servicios</td>
+                            <td><span class="badge">{{ v.preneces_exitosas }} exitosas</span></td>
+                            <td>{{ v.inseminaciones_vacias }}</td>
+                            <td>
+                                {% if v.mortinatos > 0 %}
+                                    <span class="badge badge-danger">{{ v.mortinatos }} fallecidos</span>
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong style="{% if v.tasa_mortalidad > 0 %}color: #c62828;{% else %}color: #2e7d32;{% endif %}">
+                                    {{ v.tasa_mortalidad }}%
+                                </strong>
+                            </td>
+                            <td>
+                                <div style="font-weight: 700; color: var(--primary); font-size: 0.82rem;">{{ v.tasa_exito }}%</div>
+                                <div class="progress-track">
+                                    <div class="progress-fill" style="width: {{ v.tasa_exito }}%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" style="text-align: center; color: var(--text-muted);">No hay vacas registradas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: TOROS (MACHOS) -->
+        <div class="content-card" id="seccionToros">
+            <h2>Descripción y Rendimiento Genético de Toros (Machos)</h2>
+            <p class="sub">Cantidad de lotes y pajuelas extraídas de cada toro local y total de inseminaciones exitosas logradas con su semen.</p>
+            <div class="table-container">
+                <table id="tablaToros">
+                    <thead>
+                        <tr>
+                            <th>RFID Toro</th>
+                            <th>Raza</th>
+                            <th>Estado Actual</th>
+                            <th>Lotes Extraídos</th>
+                            <th>Pajuelas Extraídas (Stock / Total)</th>
+                            <th>Inseminaciones con su Semen</th>
+                            <th>Inseminaciones con Éxito</th>
+                            <th>Tasa de Éxito</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in toros_metricas %}
+                        <tr class="fila-buscable" data-rfid="{{ t.codigo_rfid|upper }}" data-texto="{{ t.codigo_rfid|upper }} {{ t.raza|upper }} {{ t.estado_actual|upper }}" onclick="seleccionarBovinoPorRfid('{{ t.codigo_rfid }}')" style="cursor: pointer;" title="Haga clic para ver la ficha completa de este toro">
+                            <td><strong>{{ t.codigo_rfid }}</strong></td>
+                            <td>{{ t.raza }}</td>
+                            <td><span class="badge badge-neutral">{{ t.estado_actual }}</span></td>
+                            <td>{{ t.lotes_extraidos }} lotes</td>
+                            <td><strong>{{ t.stock_actual_pajuelas }} disp.</strong> / {{ t.pajuelas_extraidas_total }} extraídas</td>
+                            <td><strong>{{ t.inseminaciones_con_su_semen }}</strong> servicios</td>
+                            <td><span class="badge">{{ t.inseminaciones_exitosas }} preñeces</span></td>
+                            <td>
+                                <div style="font-weight: 700; color: var(--primary); font-size: 0.82rem;">{{ t.tasa_exito }}%</div>
+                                <div class="progress-track">
+                                    <div class="progress-fill" style="width: {{ t.tasa_exito }}%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted);">No hay toros registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: RENDIMIENTO DE PAJUELAS DE SEMEN -->
+        <div class="content-card" id="seccionPajuelas">
+            <h2>Efectividad y Éxito por Lote de Pajuelas de Semen</h2>
+            <p class="sub">Ranking de lotes de pajuelas según sus inseminaciones exitosas confirmadas en Diagnóstico de Preñez y stock restante.</p>
+            <div class="table-container">
+                <table id="tablaPajuelas">
+                    <thead>
+                        <tr>
+                            <th>Lote Pajuela</th>
+                            <th>Toro / Procedencia</th>
+                            <th>Stock Actual</th>
+                            <th>Inseminaciones Inyectadas</th>
+                            <th>Inseminaciones con Éxito</th>
+                            <th>Vacías</th>
+                            <th>Mortinatos</th>
+                            <th>Porcentaje de Éxito</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pajuelas_metricas %}
+                        <tr class="fila-buscable" data-texto="{{ p.lote_pajuela|upper }} {{ p.origen|upper }}">
+                            <td><strong>{{ p.lote_pajuela }}</strong></td>
+                            <td>{{ p.origen }}</td>
+                            <td>
+                                <span class="badge {% if p.stock <= 10 %}badge-danger{% endif %}">{{ p.stock }} unidades</span>
+                            </td>
+                            <td><strong>{{ p.usos }}</strong> inyectadas</td>
+                            <td><span class="badge">{{ p.exitos }} exitosas</span></td>
+                            <td>{{ p.vacias }}</td>
+                            <td>
+                                {% if p.mortinatos > 0 %}
+                                    <span class="badge badge-danger">{{ p.mortinatos }}</span>
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="font-weight: 700; color: var(--primary); font-size: 0.82rem;">{{ p.tasa_exito }}% ({{ p.exitos }}/{{ p.usos }})</div>
+                                <div class="progress-track">
+                                    <div class="progress-fill" style="width: {{ p.tasa_exito }}%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted);">No hay lotes de pajuelas registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const bovinosMetricas = {{ bovinos_metricas_json|safe|default:"[]" }};
+
+        function renderizarFichaIndividual(bov) {
+            const container = document.getElementById('fichaIndividualContainer');
+            if (!bov) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+
+            container.style.display = 'block';
+            if (bov.sexo === 'Hembra') {
+                container.innerHTML =
+                    '<div class="ficha-top">' +
+                        '<div>' +
+                            '<div class="ficha-title">Ficha de Vaca (Hembra) — RFID: ' + bov.codigo_rfid + '</div>' +
+                            '<div class="ficha-meta">Raza: <strong>' + bov.raza + '</strong> | Fecha de Nacimiento: <strong>' + bov.fecha_nacimiento + '</strong></div>' +
+                        '</div>' +
+                        '<span class="badge">' + bov.estado_actual + '</span>' +
+                    '</div>' +
+                    '<div class="ficha-metrics-grid">' +
+                        '<div class="ficha-metric-item">' +
+                            '<div class="m-label">Inseminaciones Recibidas</div>' +
+                            '<div class="m-val">' + bov.total_inseminaciones + ' servicios</div>' +
+                        '</div>' +
+                        '<div class="ficha-metric-item">' +
+                            '<div class="m-label">Preñeces Exitosas (Efectividad)</div>' +
+                            '<div class="m-val success">' + bov.preneces_exitosas + ' (' + bov.tasa_exito + '%)</div>' +
+                        '</div>' +
+                        '<div class="ficha-metric-item">' +
+                            '<div class="m-label">Tasa de Mortalidad en Parto</div>' +
+                            '<div class="m-val danger">' + bov.tasa_mortalidad + '%</div>' +
+                        '</div>' +
+                        '<div class="ficha-metric-item">' +
+                            '<div class="m-label">Terneros Fallecidos / Vivos</div>' +
+                            '<div class="m-val">' + bov.mortinatos + ' fallecidos / ' + bov.partos_vivos + ' vivos</div>' +
+                        '</div>' +
+                    '</div>';
+            } else {
+                container.innerHTML =
+                    '<div class="ficha-top">' +
+                        '<div>' +
+                            '<div class="ficha-title">Ficha de Toro (Macho) — RFID: ' + bov.codigo_rfid + '</div>' +
+                            '<div class="ficha-meta">Raza: <strong>' + bov.raza + '</strong> | Fecha de Nacimiento: <strong>' + bov.fecha_nacimiento + '</strong></div>' +
+                        '</div>' +
+                        '<span class="badge">' + bov.estado_actual + '</span>' +
+                    '</div>' +
+                    '<div class="ficha-metrics-grid">' +
+                        '<div class="ficha-metric-item">' +
+                            '<div class="m-label">Pajuelas Extraídas (Stock / Total)</div>' +
+                            '<div class="m-val">' + bov.stock_actual_pajuelas + ' disp. / ' + bov.pajuelas_extraidas_total + ' total</div>' +
+                        '</div>' +
+                        '<div class="ficha-metric-item">' +
+                            '<div class="m-label">Lotes de Semen Extraídos</div>' +
+                            '<div class="m-val">' + bov.lotes_extraidos + ' lotes</div>' +
+                        '</div>' +
+                        '<div class="ficha-metric-item">' +
+                            '<div class="m-label">Inseminaciones con su Semen</div>' +
+                            '<div class="m-val">' + bov.inseminaciones_con_su_semen + ' servicios</div>' +
+                        '</div>' +
+                        '<div class="ficha-metric-item">' +
+                            '<div class="m-label">Inseminaciones con Éxito</div>' +
+                            '<div class="m-val success">' + bov.inseminaciones_exitosas + ' (' + bov.tasa_exito + '%)</div>' +
+                        '</div>' +
+                    '</div>';
+            }
+        }
+
+        function ejecutarBusquedaRfid() {
+            const termino = (document.getElementById('inputBuscarRfid').value || '').trim().toUpperCase();
+            const filas = document.querySelectorAll('.fila-buscable');
+
+            filas.forEach(function(fila) {
+                const texto = fila.getAttribute('data-texto') || '';
+                const coincide = !termino || texto.indexOf(termino) !== -1;
+                fila.style.display = coincide ? '' : 'none';
+                fila.classList.toggle('fila-destacada', Boolean(termino && coincide));
+            });
+
+            if (!termino) {
+                renderizarFichaIndividual(null);
+                document.getElementById('selectDirectoRfid').value = '';
+                return;
+            }
+
+            // Buscar coincidencia exacta o primera coincidencia parcial en bovinosMetricas
+            let encontrado = bovinosMetricas.find(function(b) {
+                return b.codigo_rfid.toUpperCase() === termino;
+            });
+            if (!encontrado) {
+                encontrado = bovinosMetricas.find(function(b) {
+                    return b.codigo_rfid.toUpperCase().indexOf(termino) !== -1;
+                });
+            }
+
+            renderizarFichaIndividual(encontrado || null);
+            if (encontrado) {
+                document.getElementById('selectDirectoRfid').value = encontrado.codigo_rfid;
+            }
+        }
+
+        function seleccionarDesdeDropdown() {
+            const val = document.getElementById('selectDirectoRfid').value;
+            document.getElementById('inputBuscarRfid').value = val;
+            ejecutarBusquedaRfid();
+        }
+
+        function seleccionarBovinoPorRfid(rfid) {
+            document.getElementById('inputBuscarRfid').value = rfid;
+            document.getElementById('selectDirectoRfid').value = rfid;
+            ejecutarBusquedaRfid();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function limpiarBusquedaRfid() {
+            document.getElementById('inputBuscarRfid').value = '';
+            document.getElementById('selectDirectoRfid').value = '';
+            ejecutarBusquedaRfid();
+        }
+
+        function mostrarSeccion(seccion) {
+            document.getElementById('tabBtnTodos').classList.toggle('active', seccion === 'todos');
+            document.getElementById('tabBtnVacas').classList.toggle('active', seccion === 'vacas');
+            document.getElementById('tabBtnToros').classList.toggle('active', seccion === 'toros');
+            document.getElementById('tabBtnPajuelas').classList.toggle('active', seccion === 'pajuelas');
+
+            document.getElementById('seccionVacas').style.display = (seccion === 'todos' || seccion === 'vacas') ? 'block' : 'none';
+            document.getElementById('seccionToros').style.display = (seccion === 'todos' || seccion === 'toros') ? 'block' : 'none';
+            document.getElementById('seccionPajuelas').style.display = (seccion === 'todos' || seccion === 'pajuelas') ? 'block' : 'none';
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            try {
+                localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+            } catch (e) {}
+        }
+
+        (function() {
+            try {
+                if (localStorage.getItem('sidebar_collapsed') === 'true') {
+                    const sidebar = document.getElementById('sidebar');
+                    const mainContent = document.getElementById('mainContent');
+                    if (sidebar && mainContent) {
+                        sidebar.classList.add('collapsed');
+                        mainContent.classList.add('expanded');
+                    }
+                }
+            } catch (e) {}
+        })();
+    </script>
+</body>
+</html>

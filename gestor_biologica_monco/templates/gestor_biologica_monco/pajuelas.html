@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agrícola Moncopulli - Mantenedor de Pajuelas</title>
     <style>
-        /* (Pega exactamente el mismo bloque <style> de inseminacion.html aquí) */
         :root {
             --primary: #0f4a29;
             --primary-light: #1a6b3d;
@@ -18,7 +17,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
         
-                .sidebar {
+        .sidebar {
             width: 250px;
             background-color: var(--primary);
             color: white;
@@ -39,7 +38,7 @@
         .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
         .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
         
-                .main-content {
+        .main-content {
             flex-grow: 1;
             padding: 20px 40px;
             display: flex;
@@ -54,20 +53,276 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
         .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
         .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+        .kpi-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .kpi-card .kpi-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .kpi-card .kpi-value {
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .kpi-card .kpi-sub {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+        }
         
         .content-card { background-color: var(--card-bg); border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); flex-grow: 1; border: 1px solid var(--border-color); }
-        .page-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .page-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
         .page-title h1 { font-size: 1.5rem; color: var(--text-main); font-weight: 600; }
-        .btn-primary { background-color: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-primary { background-color: var(--primary); color: white; padding: 10px 18px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-primary:hover { background-color: var(--primary-light); }
+        .btn-secondary { background-color: #eef5f0; color: var(--primary); border: 1px solid #bfd6c6; padding: 10px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.2s; }
+        .btn-secondary:hover { background-color: #dfece3; }
+
+        /* Barra de filtros y búsqueda */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #edf2ee;
+        }
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-tab {
+            text-decoration: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4b5e51;
+            background-color: #f2f6f3;
+            border: 1px solid #dce6df;
+            transition: all 0.2s;
+        }
+        .filter-tab:hover {
+            background-color: #e4eee7;
+        }
+        .filter-tab.active {
+            background-color: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+        .search-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .search-input {
+            padding: 8px 13px;
+            border: 1px solid #ccd8cf;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            min-width: 240px;
+            outline: none;
+        }
+        .search-input:focus { border-color: var(--primary); }
+        .btn-search {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-clear {
+            text-decoration: none;
+            font-size: 0.82rem;
+            color: #666;
+            padding: 7px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        /* Alertas */
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border: 1px solid #a5d6a7;
+            padding: 13px 16px;
+            border-radius: 6px;
+            margin-bottom: 18px;
+            font-size: 0.92rem;
+            font-weight: 500;
+        }
+        .alert-danger {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            padding: 13px 16px;
+            border-radius: 6px;
+            margin-bottom: 18px;
+            font-size: 0.92rem;
+            font-weight: 500;
+        }
         
-        .table-container { width: 100%; overflow-x: auto; margin-top: 20px; }
+        .table-container { width: 100%; overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
-        th { background-color: #f9f9f9; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+        th, td { text-align: left; padding: 14px 15px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; vertical-align: middle; }
+        th { background-color: #f9f9f9; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.78rem; }
         tr:hover { background-color: #fbfbfb; }
-        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background-color: #e8f5e9; color: #2e7d32; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background-color: #e8f5e9; color: #2e7d32; display: inline-block; }
         .badge-low { background-color: #ffebee; color: #c62828; }
+        .badge-origin-local { background-color: #e6f2eb; color: #0f4a29; padding: 3px 8px; border-radius: 5px; font-size: 0.73rem; font-weight: 700; margin-left: 6px; }
+        .badge-origin-import { background-color: #e8eef7; color: #1e4b85; padding: 3px 8px; border-radius: 5px; font-size: 0.73rem; font-weight: 700; margin-left: 6px; }
+
+        /* Controles de fila */
+        .stock-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-step {
+            width: 26px;
+            height: 26px;
+            border-radius: 5px;
+            border: 1px solid #c5d6ca;
+            background-color: #f4f8f5;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .btn-step:hover {
+            background-color: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .row-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .btn-action {
+            padding: 6px 11px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #cad8ce;
+            background-color: #fff;
+            color: var(--primary);
+            transition: all 0.15s;
+        }
+        .btn-action:hover {
+            background-color: #eef5f0;
+            border-color: var(--primary);
+        }
+        .btn-action-danger {
+            color: #b71c1c;
+            border-color: #e5b8b8;
+        }
+        .btn-action-danger:hover {
+            background-color: #ffebee;
+            border-color: #b71c1c;
+        }
+
+        /* Modal de Edición de Lote */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(15, 36, 23, 0.48);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        .modal-box {
+            background-color: #ffffff;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 460px;
+            padding: 28px 30px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+            border: 1px solid #dce6df;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .modal-header h3 {
+            font-size: 1.15rem;
+            color: var(--primary);
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: #777;
+            font-weight: bold;
+        }
+        .modal-group {
+            margin-bottom: 16px;
+        }
+        .modal-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+        .modal-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.92rem;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        @media (max-width: 960px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        }
     </style>
     {% include "gestor_biologica_monco/_parcela_estilos.html" %}
 </head>
@@ -81,6 +336,7 @@
         </div>
         <ul class="menu-links">
             <li><a href="/inicio/">Panel General</a></li>
+            <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
             <li><a href="/inseminacion/">Inseminación</a></li>
             <li><a href="/linaje/">Linaje Sanguíneo</a></li>
             <li><a href="/pajuelas/" class="active">Mantenedor de Pajuelas</a></li>
@@ -105,10 +361,63 @@
 
         {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
 
+        <!-- Tarjetas de Resumen del Inventario -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Lotes Registrados</div>
+                <div class="kpi-value" id="kpiTotalLotes">{{ total_lotes }}</div>
+                <div class="kpi-sub">Total de lotes en catálogo</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Dosis Disponibles</div>
+                <div class="kpi-value" id="kpiTotalDosis">{{ total_dosis }}</div>
+                <div class="kpi-sub">Unidades totales en termo</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Procedencia de Lotes</div>
+                <div class="kpi-value" id="kpiProcedencia">{{ total_locales }} / {{ total_importados }}</div>
+                <div class="kpi-sub">Toros Locales vs. Importados</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Alertas de Stock</div>
+                <div class="kpi-value" id="kpiTotalCriticos" style="{% if total_criticos > 0 %}color: #c62828;{% endif %}">{{ total_criticos }}</div>
+                <div class="kpi-sub">Lotes con 10 o menos dosis</div>
+            </div>
+        </div>
+
         <div class="content-card">
             <div class="page-title">
                 <h1>Mantenedor de Pajuelas de Semen</h1>
-                <a href="/pajuelas/nueva/" class="btn-primary">Ingresar Nuevo Lote</a>
+                <div class="header-actions">
+                    <a href="/pajuelas/nueva/?tipo=toro_local" class="btn-secondary">Extraer de Toro Registrado</a>
+                    <a href="/pajuelas/nueva/?tipo=importado" class="btn-primary">Ingresar Lote Importado / Nuevo Lote</a>
+                </div>
+            </div>
+
+            {% if mensaje_exito %}
+                <div class="alert-success">{{ mensaje_exito }}</div>
+            {% endif %}
+            {% if mensaje_error %}
+                <div class="alert-danger">{{ mensaje_error }}</div>
+            {% endif %}
+
+            <!-- Barra de Filtros y Búsqueda -->
+            <div class="toolbar">
+                <div class="filter-tabs">
+                    <a href="/pajuelas/?filtro=todos{% if busqueda %}&q={{ busqueda }}{% endif %}" class="filter-tab {% if filtro_actual == 'todos' %}active{% endif %}">Todos ({{ total_lotes }})</a>
+                    <a href="/pajuelas/?filtro=locales{% if busqueda %}&q={{ busqueda }}{% endif %}" class="filter-tab {% if filtro_actual == 'locales' %}active{% endif %}">Toros Locales ({{ total_locales }})</a>
+                    <a href="/pajuelas/?filtro=importados{% if busqueda %}&q={{ busqueda }}{% endif %}" class="filter-tab {% if filtro_actual == 'importados' %}active{% endif %}">Importados / Externos ({{ total_importados }})</a>
+                    <a href="/pajuelas/?filtro=criticos{% if busqueda %}&q={{ busqueda }}{% endif %}" class="filter-tab {% if filtro_actual == 'criticos' %}active{% endif %}">Stock Crítico ({{ total_criticos }})</a>
+                </div>
+
+                <form method="GET" action="/pajuelas/" class="search-form">
+                    <input type="hidden" name="filtro" value="{{ filtro_actual }}">
+                    <input type="text" name="q" value="{{ busqueda }}" class="search-input" placeholder="Buscar por lote, RFID, país o raza...">
+                    <button type="submit" class="btn-search">Buscar</button>
+                    {% if busqueda or filtro_actual != 'todos' %}
+                        <a href="/pajuelas/" class="btn-clear">Limpiar</a>
+                    {% endif %}
+                </form>
             </div>
 
             <div class="table-container">
@@ -116,36 +425,59 @@
                     <thead>
                         <tr>
                             <th>Lote Pajuela</th>
-                            <th>Toro (Local / Externo)</th>
+                            <th>Reproductor / Origen</th>
                             <th>Fecha de Extracción</th>
                             <th>Stock Disponible</th>
                             <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for pajuela in pajuelas %}
-                        <tr>
-                            <td><strong>{{ pajuela.lote_pajuela }}</strong></td>
+                        <tr id="fila-pajuela-{{ pajuela.id_pajuela }}">
+                            <td><strong id="lote-codigo-{{ pajuela.id_pajuela }}">{{ pajuela.lote_pajuela }}</strong></td>
                             <td>
                                 {% if pajuela.toro %}
-                                    {{ pajuela.toro.codigo_rfid }} (Local)
+                                    <strong>{{ pajuela.toro.codigo_rfid }}</strong> ({{ pajuela.toro.raza.nombre_raza }})
+                                    <span class="badge-origin-local">Toro Local</span>
                                 {% else %}
-                                    {{ pajuela.codigo_toro_externo }} (Externo)
+                                    <strong>{{ pajuela.codigo_toro_externo }}</strong>
+                                    <span class="badge-origin-import">Importado / Externo</span>
                                 {% endif %}
                             </td>
                             <td>{{ pajuela.fecha_extraccion|date:"d M Y" }}</td>
-                            <td>{{ pajuela.stock }} unidades</td>
                             <td>
+                                <div class="stock-control">
+                                    <button type="button" class="btn-step" title="Descontar 1 unidad" onclick="ajustarStockAjax('{{ pajuela.id_pajuela }}', 'restar_uno')">-</button>
+                                    <span id="stock-texto-{{ pajuela.id_pajuela }}" data-stock="{{ pajuela.stock }}" style="min-width: 85px; text-align: center; font-weight: 600;">{{ pajuela.stock }} unidades</span>
+                                    <button type="button" class="btn-step" title="Agregar 1 unidad" onclick="ajustarStockAjax('{{ pajuela.id_pajuela }}', 'sumar_uno')">+</button>
+                                </div>
+                            </td>
+                            <td id="estado-celda-{{ pajuela.id_pajuela }}">
                                 {% if pajuela.stock > 10 %}
                                     <span class="badge">Suficiente</span>
                                 {% else %}
                                     <span class="badge badge-low">Stock Crítico</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                <div class="row-actions">
+                                    <button type="button" class="btn-action"
+                                        onclick="abrirModalEditar('{{ pajuela.id_pajuela }}', '{{ pajuela.lote_pajuela|escapejs }}', document.getElementById('stock-texto-{{ pajuela.id_pajuela }}').getAttribute('data-stock'), '{{ pajuela.fecha_extraccion|date:'Y-m-d' }}')">
+                                        Editar Lote
+                                    </button>
+                                    <form method="POST" action="/pajuelas/?filtro={{ filtro_actual }}{% if busqueda %}&q={{ busqueda }}{% endif %}" style="display:inline;" onsubmit="return confirm('¿Está seguro de que desea eliminar el lote {{ pajuela.lote_pajuela }}?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="accion" value="eliminar">
+                                        <input type="hidden" name="pajuela_id" value="{{ pajuela.id_pajuela }}">
+                                        <button type="submit" class="btn-action btn-action-danger">Eliminar</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" style="text-align: center; color: var(--text-muted);">No hay pajuelas en el inventario.</td>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">No se encontraron lotes de pajuelas con los criterios seleccionados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -154,7 +486,103 @@
         </div>
     </main>
 
+    <!-- Modal para Editar Lote / Ajustar Stock -->
+    <div class="modal-overlay" id="modalEditarLote">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Actualizar Lote de Pajuelas</h3>
+                <button type="button" class="modal-close" onclick="cerrarModalEditar()">&times;</button>
+            </div>
+            <form method="POST" action="/pajuelas/?filtro={{ filtro_actual }}{% if busqueda %}&q={{ busqueda }}{% endif %}">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="editar_lote">
+                <input type="hidden" name="pajuela_id" id="modalPajuelaId">
+
+                <div class="modal-group">
+                    <label>Código de Lote</label>
+                    <input type="text" name="lote_pajuela" id="modalLoteCodigo" class="modal-input" required>
+                </div>
+
+                <div class="modal-group">
+                    <label>Stock Disponible (Unidades)</label>
+                    <input type="number" name="stock" id="modalLoteStock" class="modal-input" min="0" required>
+                </div>
+
+                <div class="modal-group">
+                    <label>Fecha de Extracción / Recepción</label>
+                    <input type="date" name="fecha_extraccion" id="modalLoteFecha" class="modal-input" required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-action" onclick="cerrarModalEditar()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        function obtenerCsrfToken() {
+            const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+            return input ? input.value : '';
+        }
+
+        function ajustarStockAjax(pajuelaId, accion) {
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', obtenerCsrfToken());
+            formData.append('accion', accion);
+            formData.append('pajuela_id', pajuelaId);
+
+            fetch('/pajuelas/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    const spanStock = document.getElementById('stock-texto-' + pajuelaId);
+                    if (spanStock) {
+                        spanStock.textContent = data.stock + ' unidades';
+                        spanStock.setAttribute('data-stock', data.stock);
+                    }
+                    const celdaEstado = document.getElementById('estado-celda-' + pajuelaId);
+                    if (celdaEstado) {
+                        if (data.es_critico) {
+                            celdaEstado.innerHTML = '<span class="badge badge-low">Stock Crítico</span>';
+                        } else {
+                            celdaEstado.innerHTML = '<span class="badge">Suficiente</span>';
+                        }
+                    }
+                    const kpiDosis = document.getElementById('kpiTotalDosis');
+                    if (kpiDosis) kpiDosis.textContent = data.total_dosis;
+
+                    const kpiCriticos = document.getElementById('kpiTotalCriticos');
+                    if (kpiCriticos) {
+                        kpiCriticos.textContent = data.total_criticos;
+                        kpiCriticos.style.color = data.total_criticos > 0 ? '#c62828' : 'var(--primary)';
+                    }
+                }
+            })
+            .catch(function(err) {
+                console.error('Error al actualizar stock:', err);
+            });
+        }
+
+        function abrirModalEditar(id, codigo, stock, fecha) {
+            document.getElementById('modalPajuelaId').value = id;
+            document.getElementById('modalLoteCodigo').value = codigo;
+            document.getElementById('modalLoteStock').value = stock;
+            document.getElementById('modalLoteFecha').value = fecha;
+            document.getElementById('modalEditarLote').classList.add('open');
+        }
+
+        function cerrarModalEditar() {
+            document.getElementById('modalEditarLote').classList.remove('open');
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');

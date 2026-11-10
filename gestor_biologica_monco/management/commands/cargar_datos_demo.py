@@ -5,15 +5,11 @@ from django.utils import timezone
 
 from gestor_biologica_monco.models import (
     Bovino,
-    ControlPeso,
     DiagnosticoGestacion,
     Inseminacion,
-    Lote,
     Madre,
-    Parcela,
     Parto,
     PajuelaSemen,
-    Predio,
     Raza,
 )
 
@@ -31,19 +27,6 @@ class Command(BaseCommand):
         hereford, _ = Raza.objects.get_or_create(
             nombre_raza="Hereford",
             defaults={"origen": "Inglaterra"},
-        )
-        predio, _ = Predio.objects.get_or_create(
-            nombre="Predio de demostración",
-            defaults={"ubicacion": "Moncopulli"},
-        )
-        parcela, _ = Parcela.objects.get_or_create(
-            predio=predio,
-            codigo="DEMO-PARC-01",
-        )
-        Lote.objects.get_or_create(
-            parcela=parcela,
-            nombre_lote="Maternidad",
-            defaults={"descripcion": "Lote de demostración para maternidad y crías."},
         )
 
         madre, _ = Madre.objects.get_or_create(
@@ -140,15 +123,10 @@ class Command(BaseCommand):
             pajuela=pajuela,
             defaults={"fecha_servicio": servicio_reciente},
         )
-        ControlPeso.objects.get_or_create(
-            bovino=cria,
-            fecha_pesaje=cria.fecha_nacimiento,
-            defaults={"peso_kg": 42.5},
-        )
 
         self.stdout.write(
             self.style.SUCCESS(
                 "Datos de demostración listos: 4 bovinos, 2 inseminaciones, "
-                "1 diagnóstico, 1 parto y 1 control de peso."
+                "1 diagnóstico y 1 parto."
             )
         )

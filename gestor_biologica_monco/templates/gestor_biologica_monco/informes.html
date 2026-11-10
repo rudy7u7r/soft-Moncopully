@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agrícola Moncopulli - Informes</title>
+    <title>Agrícola Moncopulli - Informes e Ingesta RFID</title>
     <style>
         :root {
             --primary: #0f4a29;
@@ -17,7 +17,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
         
-                .sidebar {
+        .sidebar {
             width: 250px;
             background-color: var(--primary);
             color: white;
@@ -38,7 +38,7 @@
         .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
         .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
         
-                .main-content {
+        .main-content {
             flex-grow: 1;
             padding: 20px 40px;
             display: flex;
@@ -54,21 +54,112 @@
         .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
         .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
         
-        .content-card { background-color: var(--card-bg); border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 20px; border: 1px solid var(--border-color); }
-        .page-title { margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
-        .page-title h1 { font-size: 1.5rem; color: var(--text-main); font-weight: 600; }
+        .content-card { background-color: var(--card-bg); border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 24px; border: 1px solid var(--border-color); }
+        .page-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; flex-wrap: wrap; gap: 12px; }
+        .page-title h1 { font-size: 1.4rem; color: var(--text-main); font-weight: 600; }
+        .template-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-outline { text-decoration: none; padding: 8px 14px; border-radius: 6px; border: 1px solid #bfd4c5; background: #f2f7f3; color: var(--primary); font-size: 0.84rem; font-weight: 600; transition: all 0.2s; }
+        .btn-outline:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        /* Ingesta RFID */
+        .ingesta-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+        .upload-zone {
+            border: 2px dashed #9fc0a9;
+            background: #f6faf7;
+            border-radius: 10px;
+            padding: 24px;
+        }
+        .upload-zone h3 {
+            font-size: 1.05rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .upload-zone p {
+            font-size: 0.85rem;
+            color: #5d7063;
+            margin-bottom: 16px;
+            line-height: 1.45;
+        }
+        .spec-box {
+            background: #fafcfa;
+            border: 1px solid #dce8df;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .spec-box h4 {
+            font-size: 0.95rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        .spec-list {
+            list-style: none;
+            font-size: 0.84rem;
+            color: #4f6155;
+        }
+        .spec-list li {
+            padding: 6px 0;
+            border-bottom: 1px dashed #e3ede6;
+        }
+        .spec-list li:last-child { border-bottom: none; }
+
+        /* Reporte de Carga */
+        .carga-report-box {
+            margin-top: 24px;
+            border-top: 1px solid #e2ebe4;
+            padding-top: 22px;
+        }
+        .carga-kpis {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .carga-kpi {
+            background: #f8fbf9;
+            border: 1px solid #dce8df;
+            border-radius: 8px;
+            padding: 12px 14px;
+            text-align: center;
+        }
+        .carga-kpi .lbl { font-size: 0.74rem; text-transform: uppercase; font-weight: 700; color: #677a6d; margin-bottom: 4px; }
+        .carga-kpi .val { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+        .carga-kpi .val.danger { color: #c62828; }
+        .carga-kpi .val.success { color: #2e7d32; }
+
+        .report-table-wrap { width: 100%; overflow-x: auto; max-height: 320px; overflow-y: auto; border: 1px solid #e4ece6; border-radius: 8px; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+        .report-table th, .report-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #edf2ee; }
+        .report-table th { background: #f2f7f3; color: #4e6254; font-size: 0.76rem; text-transform: uppercase; position: sticky; top: 0; }
+
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.74rem; font-weight: 600; display: inline-block; }
+        .badge-success { background-color: #e8f5e9; color: #2e7d32; }
+        .badge-info { background-color: #e3f2fd; color: #1565c0; }
+        .badge-warning { background-color: #fff3e0; color: #ef6c00; }
+        .badge-danger { background-color: #ffebee; color: #c62828; }
         
-        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .report-box { border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; background-color: #fafafa; }
-        .report-box h3 { font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; }
-        .report-box p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; }
+        .report-box { border: 1px solid var(--border-color); border-radius: 8px; padding: 22px; background-color: #fafafa; display: flex; flex-direction: column; justify-content: space-between; }
+        .report-box h3 { font-size: 1.05rem; color: var(--primary); margin-bottom: 8px; }
+        .report-box p { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.45; }
         
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: var(--text-main); }
-        .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 5px; color: var(--text-main); }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.88rem; background: #fff; }
         
-        .btn-primary { background-color: var(--primary); color: white; padding: 10px 15px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.2s; }
+        .btn-primary { background-color: var(--primary); color: white; padding: 11px 15px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.2s; }
         .btn-primary:hover { background-color: var(--primary-light); }
+
+        .alert-danger { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 14px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; font-weight: 600; }
+
+        @media (max-width: 960px) {
+            .ingesta-grid { grid-template-columns: 1fr; }
+            .carga-kpis { grid-template-columns: repeat(2, 1fr); }
+        }
     </style>
     {% include "gestor_biologica_monco/_parcela_estilos.html" %}
 </head>
@@ -82,7 +173,13 @@
         </div>
         <ul class="menu-links">
             <li><a href="/inicio/">Panel General</a></li>
-            <li><a href="/inseminacion/">Inseminación</a></li>
+            <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
+            <li>
+                <a href="/inseminacion/">Inseminación</a>
+                <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
+                    <li><a href="/inseminacion/diagnostico/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Diagnóstico de Preñez</a></li>
+                </ul>
+            </li>
             <li><a href="/linaje/">Linaje Sanguíneo</a></li>
             <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
             <li><a href="/informes/" class="active">Informes</a></li>
@@ -97,7 +194,7 @@
     <main class="main-content" id="mainContent">
         <div class="top-bar">
             <button class="menu-toggle" onclick="toggleSidebar()">
-                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Módulo de Reportes</span>
+                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Ingesta RFID y Exportación para Terreno</span>
             </button>
             <div class="user-status">
                 <span class="status-dot"></span> Sincronizado | {{ user.username|default:"Administrador" }}
@@ -106,29 +203,200 @@
 
         {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
 
+        <!-- MÓDULO 1 (SEMANA 4): INTERFAZ DE INGESTA RFID Y REPORTES DE CARGA (CSV / EXCEL) -->
         <div class="content-card">
             <div class="page-title">
-                <h1>Generación de Informes y Exportación</h1>
+                <h1>Ingesta Masiva de Registros RFID (CSV / Excel)</h1>
+                <div class="template-btns">
+                    <a href="/exportar/plantilla-rfid/?formato=xlsx" class="btn-outline">Descargar Plantilla Excel (.xlsx)</a>
+                    <a href="/exportar/plantilla-rfid/?formato=csv" class="btn-outline">Descargar Plantilla CSV (.csv)</a>
+                </div>
+            </div>
+
+            <div class="ingesta-grid">
+                <div class="upload-zone">
+                    <h3>Cargar Planilla de Terreno (.xlsx o .csv)</h3>
+                    <p>Suba la planilla capturada por el lector RFID o registrada en terreno. El sistema ejecutará la validación línea por línea antes de insertar los ejemplares en la base de datos.</p>
+
+                    <form method="POST" action="/informes/" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Seleccione Archivo CSV o Excel (.xlsx)</label>
+                            <input type="file" name="archivo_rfid" accept=".csv,.xlsx,.txt" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tratamiento de Códigos RFID Duplicados</label>
+                            <select name="modo_duplicados" class="form-control">
+                                <option value="omitir">Omitir códigos RFID ya existentes (Recomendado)</option>
+                                <option value="actualizar">Actualizar estado y datos de códigos RFID existentes</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Procesar y Validar Planilla RFID</button>
+                    </form>
+                </div>
+
+                <div class="spec-box">
+                    <h4>Estructura de Columnas Soportada</h4>
+                    <ul class="spec-list">
+                        <li><strong>codigo_rfid:</strong> Identificador único del chip RFID (Obligatorio).</li>
+                        <li><strong>sexo:</strong> <code>Hembra</code> o <code>Macho</code> (también acepta <code>Vaca</code>, <code>Toro</code>, <code>F</code>, <code>M</code>).</li>
+                        <li><strong>fecha_nacimiento:</strong> Formato <code>AAAA-MM-DD</code> o <code>DD/MM/AAAA</code>.</li>
+                        <li><strong>raza:</strong> Nombre de la raza (ej. <code>Angus</code>, <code>Hereford</code>).</li>
+                        <li><strong>estado_actual:</strong> Estado productivo (ej. <code>Activo</code>, <code>Reproductora</code>, <code>Cría</code>).</li>
+                        <li><strong>madre_rfid / lote_pajuela:</strong> Opcionales para vinculación automática de linaje.</li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if reporte_carga %}
+            <div class="carga-report-box">
+                <h3 style="font-size: 1.08rem; color: var(--primary); margin-bottom: 14px;">
+                    Reporte de Carga y Validación — Archivo: {{ reporte_carga.nombre_archivo }}
+                </h3>
+
+                {% if reporte_carga.error_general %}
+                    <div class="alert-danger">{{ reporte_carga.error_general }}</div>
+                {% else %}
+                    <div class="carga-kpis">
+                        <div class="carga-kpi">
+                            <div class="lbl">Filas Procesadas</div>
+                            <div class="val">{{ reporte_carga.total_filas }}</div>
+                        </div>
+                        <div class="carga-kpi">
+                            <div class="lbl">Nuevos Registrados</div>
+                            <div class="val success">{{ reporte_carga.creados }}</div>
+                        </div>
+                        <div class="carga-kpi">
+                            <div class="lbl">Actualizados</div>
+                            <div class="val">{{ reporte_carga.actualizados }}</div>
+                        </div>
+                        <div class="carga-kpi">
+                            <div class="lbl">Omitidos (Duplicados)</div>
+                            <div class="val">{{ reporte_carga.omitidos }}</div>
+                        </div>
+                        <div class="carga-kpi">
+                            <div class="lbl">Errores Detectados</div>
+                            <div class="val {% if reporte_carga.errores > 0 %}danger{% endif %}">{{ reporte_carga.errores }}</div>
+                        </div>
+                    </div>
+
+                    <div class="report-table-wrap">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Fila</th>
+                                    <th>Código RFID</th>
+                                    <th>Resultado</th>
+                                    <th>Detalle de Validación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for det in reporte_carga.detalles %}
+                                <tr>
+                                    <td>#{{ det.fila }}</td>
+                                    <td><strong>{{ det.rfid }}</strong></td>
+                                    <td>
+                                        <span class="badge badge-{{ det.tipo }}">{{ det.estado }}</span>
+                                    </td>
+                                    <td>{{ det.mensaje }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- MÓDULO 2 (SEMANA 4): EXPORTACIÓN A EXCEL PARA TERRENO (OFFLINE) -->
+        <div class="content-card">
+            <div class="page-title">
+                <h1>Exportación de Planillas Excel para Uso en Terreno (Offline)</h1>
             </div>
 
             <div class="report-grid">
+                <!-- Planilla de Ganado para Terreno -->
+                <div class="report-box">
+                    <div>
+                        <h3>Planilla de Ganado para Terreno</h3>
+                        <p>Descargue el padrón completo de bovinos ({{ total_bovinos }} registrados) con sus códigos RFID, raza, historial reproductivo y columna de observaciones para trabajo offline en parcela.</p>
+                    </div>
+                    <form action="/exportar/terreno/" method="GET">
+                        <div class="form-group">
+                            <label>Filtrar por Clasificación</label>
+                            <select name="sexo" class="form-control">
+                                <option value="todos">Todo el Ganado (Vacas y Toros)</option>
+                                <option value="Hembra">Solo Vacas (Hembras)</option>
+                                <option value="Macho">Solo Toros (Machos)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Formato de Planilla</label>
+                            <select name="formato" class="form-control">
+                                <option value="xlsx">Microsoft Excel (.xlsx)</option>
+                                <option value="csv">Archivo CSV separado por punto y coma (.csv)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Descargar Planilla de Terreno</button>
+                    </form>
+                </div>
+
                 <!-- Reporte de Inseminaciones -->
                 <div class="report-box">
-                    <h3>Reporte de Inseminaciones</h3>
-                    <p>Exporte el registro detallado de las inseminaciones realizadas, incluyendo códigos RFID y lotes de pajuelas utilizados.</p>
+                    <div>
+                        <h3>Reporte de Inseminaciones</h3>
+                        <p>Exporte el registro detallado de las inseminaciones ({{ total_inseminaciones }} servicios), incluyendo códigos RFID, lotes utilizados y resultados de diagnóstico de preñez o mortinatos.</p>
+                    </div>
                     <form action="/exportar/inseminaciones/" method="GET">
                         <div class="form-group">
-                            <label>Rango de Fechas (Opcional)</label>
+                            <label>Mes de Servicio (Opcional)</label>
                             <input type="month" name="mes_filtro" class="form-control">
                         </div>
-                        <button type="submit" class="btn-primary">Descargar Excel</button>
+                        <div class="form-group">
+                            <label>Formato de Planilla</label>
+                            <select name="formato" class="form-control">
+                                <option value="xlsx">Microsoft Excel (.xlsx)</option>
+                                <option value="csv">Archivo CSV (.csv)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Descargar Excel de Inseminaciones</button>
+                    </form>
+                </div>
+
+                <!-- Reporte de Inventario -->
+                <div class="report-box">
+                    <div>
+                        <h3>Inventario Genético (Pajuelas)</h3>
+                        <p>Obtenga el listado actual del inventario de pajuelas de semen ({{ total_pajuelas }} lotes), con detalle de stock disponible, usos en inseminación y efectividad.</p>
+                    </div>
+                    <form action="/exportar/inventario/" method="GET">
+                        <div class="form-group">
+                            <label>Filtro de Stock</label>
+                            <select name="stock" class="form-control">
+                                <option value="todos">Todo el inventario</option>
+                                <option value="critico">Solo Stock Crítico (&le; 10 unidades)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Formato de Planilla</label>
+                            <select name="formato" class="form-control">
+                                <option value="xlsx">Microsoft Excel (.xlsx)</option>
+                                <option value="csv">Archivo CSV (.csv)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Descargar Excel de Inventario</button>
                     </form>
                 </div>
 
                 <!-- Reporte de Consanguinidad -->
                 <div class="report-box">
-                    <h3>Alertas de Consanguinidad</h3>
-                    <p>Genere un informe histórico con los bloqueos y alertas de consanguinidad detectadas por el sistema al intentar registrar servicios.</p>
+                    <div>
+                        <h3>Alertas de Consanguinidad</h3>
+                        <p>Genere un informe histórico con los bloqueos y alertas de consanguinidad ({{ total_alertas }} registros) detectadas por el sistema al validar cruzas reproductivas.</p>
+                    </div>
                     <form action="/exportar/alertas/" method="GET">
                         <div class="form-group">
                             <label>Estado de Alerta</label>
@@ -137,23 +405,14 @@
                                 <option value="bloqueada">Operaciones Bloqueadas</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn-primary">Descargar Excel</button>
-                    </form>
-                </div>
-
-                <!-- Reporte de Inventario -->
-                <div class="report-box">
-                    <h3>Inventario Genético (Pajuelas)</h3>
-                    <p>Obtenga el listado actual del inventario de pajuelas de semen, con detalle de stock disponible y proveedores externos.</p>
-                    <form action="/exportar/inventario/" method="GET">
                         <div class="form-group">
-                            <label>Filtro de Stock</label>
-                            <select name="stock" class="form-control">
-                                <option value="todos">Todo el inventario</option>
-                                <option value="critico">Solo Stock Crítico (< 10)</option>
+                            <label>Formato de Planilla</label>
+                            <select name="formato" class="form-control">
+                                <option value="xlsx">Microsoft Excel (.xlsx)</option>
+                                <option value="csv">Archivo CSV (.csv)</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn-primary">Descargar Excel</button>
+                        <button type="submit" class="btn-primary">Descargar Excel de Alertas</button>
                     </form>
                 </div>
             </div>

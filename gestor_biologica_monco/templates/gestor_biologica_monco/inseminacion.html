@@ -84,6 +84,7 @@
         </div>
         <ul class="menu-links">
             <li><a href="/inicio/">Panel General</a></li>
+            <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
             <li>
                 <a href="/inseminacion/">Inseminación</a>
                 <!-- Subcampo de Preñez -->
@@ -144,6 +145,8 @@
                                     {% if diag %}
                                         {% if diag.resultado == 'preñada' %}
                                             <span class="badge badge-success">Preñada</span>
+                                        {% elif diag.resultado == 'mortinato' %}
+                                            <span class="badge badge-error">Ternero Murió en el Parto</span>
                                         {% else %}
                                             <span class="badge badge-error">Vacía</span>
                                         {% endif %}

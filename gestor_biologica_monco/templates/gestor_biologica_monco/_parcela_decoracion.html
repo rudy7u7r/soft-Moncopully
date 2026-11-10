@@ -83,3 +83,90 @@
         </g>
     </svg>
 </div>
+
+{% if request.GET.acceso_restringido %}
+<div style="background-color: #fff3e0; color: #b45309; border: 1px solid #f59e0b; padding: 12px 18px; border-radius: 8px; margin-bottom: 18px; font-size: 0.9rem; font-weight: 600;">
+    Control de Acceso por Rol ({{ rol_titulo }}): Su perfil actual no cuenta con permisos para acceder al módulo solicitado.
+</div>
+{% endif %}
+
+<script>
+    (function() {
+        const rolActual = "{{ rol_actual|default:'admin' }}";
+        const rolTitulo = "{{ rol_titulo|default:'Administrador' }}";
+        const nombreActivo = "{{ usuario_nombre_activo|default:'Administrador'|escapejs }}";
+        const rutActivo = "{{ usuario_rut_activo|default:'11.111.111-1'|escapejs }}";
+        const esAdmin = {{ es_admin|yesno:"true,false" }};
+        const puedeRendimiento = {{ puede_rendimiento|yesno:"true,false" }};
+        const puedeInseminacion = {{ puede_inseminacion|yesno:"true,false" }};
+        const puedeLinaje = {{ puede_linaje|yesno:"true,false" }};
+        const puedePajuelas = {{ puede_pajuelas|yesno:"true,false" }};
+        const puedeInformes = {{ puede_informes|yesno:"true,false" }};
+        const puedeBovinoNuevo = {{ puede_bovino_nuevo|yesno:"true,false" }};
+        const pendientesCount = {{ solicitudes_pendientes_count|default:0 }};
+
+        // Actualizar indicador de usuario y rol en la barra superior
+        const userStatusEl = document.querySelector('.user-status');
+        if (userStatusEl) {
+            userStatusEl.innerHTML =
+                '<span class="status-dot"></span> ' +
+                '<span><strong>' + nombreActivo + '</strong> | ' + rolTitulo + ' (' + rutActivo + ')</span> ' +
+                '<a href="/login/?logout=1" style="margin-left: 8px; padding: 4px 10px; border-radius: 5px; background: #eef5f0; color: #0f4a29; border: 1px solid #bfd4c5; text-decoration: none; font-size: 0.78rem; font-weight: 700;">Cambiar Usuario</a>';
+        }
+
+        // Agregar enlace "Roles y Permisos" en el menú lateral si es Administrador y aún no está presente
+        const mainMenuList = document.querySelector('.sidebar > .menu-links');
+        if (mainMenuList && esAdmin && !mainMenuList.querySelector('a[href="/usuarios/"]')) {
+            const liUsuarios = document.createElement('li');
+            const aUsuarios = document.createElement('a');
+            aUsuarios.href = '/usuarios/';
+            aUsuarios.innerHTML = 'Roles y Permisos' + (pendientesCount > 0 ? ' <span style="background:#ffb300;color:#1b2e21;padding:1px 7px;border-radius:10px;font-size:0.74rem;font-weight:800;margin-left:6px;">' + pendientesCount + '</span>' : '');
+            if (window.location.pathname.indexOf('/usuarios') === 0) {
+                aUsuarios.classList.add('active');
+            }
+            liUsuarios.appendChild(aUsuarios);
+            mainMenuList.appendChild(liUsuarios);
+        }
+
+        // Filtrar enlaces del menú lateral según permisos del usuario en la base de datos
+        const sidebarLinks = document.querySelectorAll('.sidebar .menu-links a');
+        sidebarLinks.forEach(function(link) {
+            const href = link.getAttribute('href') || '';
+            const li = link.closest('li');
+            if (!li) return;
+
+            if (href.indexOf('/usuarios') === 0 && !esAdmin) {
+                li.style.display = 'none';
+            } else if (href.indexOf('/rendimiento') === 0 && !puedeRendimiento) {
+                li.style.display = 'none';
+            } else if (href.indexOf('/inseminacion') === 0 && !puedeInseminacion) {
+                li.style.display = 'none';
+            } else if (href.indexOf('/linaje') === 0 && !puedeLinaje) {
+                li.style.display = 'none';
+            } else if (href.indexOf('/pajuelas') === 0 && !puedePajuelas) {
+                li.style.display = 'none';
+            } else if (href.indexOf('/informes') === 0 && !puedeInformes) {
+                li.style.display = 'none';
+            }
+        });
+
+        // Ocultar accesos rápidos no permitidos en el Panel General
+        const mainLinks = document.querySelectorAll('.main-content a');
+        mainLinks.forEach(function(a) {
+            const href = a.getAttribute('href') || '';
+            if (href.indexOf('/linaje') === 0 && !puedeLinaje) {
+                a.style.display = 'none';
+            } else if (href.indexOf('/informes') === 0 && !puedeInformes) {
+                a.style.display = 'none';
+            } else if (href.indexOf('/pajuelas') === 0 && !puedePajuelas) {
+                a.style.display = 'none';
+            }
+        });
+
+        const formNuevoBovino = document.querySelector('form[action="/bovino/nuevo/"]');
+        if (formNuevoBovino && !puedeBovinoNuevo) {
+            const cardContenedor = formNuevoBovino.closest('.panel-card');
+            if (cardContenedor) cardContenedor.style.display = 'none';
+        }
+    })();
+</script>
