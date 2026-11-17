@@ -61,7 +61,7 @@ class Usuario(models.Model):
     id_usuario = models.AutoField(primary_key=True)
     rut = models.CharField(max_length=20, unique=True)
     nombre_completo = models.CharField(max_length=100, default='Usuario')
-    email = models.EmailField(max_length=120, default='usuario@gmail.com')
+    email = models.EmailField(max_length=120, unique=True)
     password = models.CharField(max_length=128)
     rol = models.CharField(max_length=20, choices=ROL_CHOICES, default='pendiente')
     aprobado_por_admin = models.BooleanField(default=False)

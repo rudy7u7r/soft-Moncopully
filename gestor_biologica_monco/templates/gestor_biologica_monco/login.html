@@ -541,10 +541,31 @@
                 mostrarAlerta('Ingrese un correo Gmail válido.', 'danger');
                 return;
             }
-            document.getElementById('labelGmailVinculado').textContent = gmail;
-            document.getElementById('subpasoRegistrarGmail').style.display = 'none';
-            document.getElementById('subpasoCrearPassword').style.display = 'block';
-            document.getElementById('inputPasswordNuevo').focus();
+
+            const fd = new FormData();
+            fd.append('csrfmiddlewaretoken', obtenerCsrf());
+            fd.append('accion', 'verificar_gmail');
+            fd.append('email', gmail);
+
+            fetch('/login/', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.ok) {
+                    mostrarAlerta(data.error || 'Este correo Gmail ya está en uso.', 'danger');
+                    return;
+                }
+                document.getElementById('labelGmailVinculado').textContent = data.email || gmail;
+                document.getElementById('subpasoRegistrarGmail').style.display = 'none';
+                document.getElementById('subpasoCrearPassword').style.display = 'block';
+                document.getElementById('inputPasswordNuevo').focus();
+            })
+            .catch(function() {
+                mostrarAlerta('Error al verificar la disponibilidad del correo Gmail.', 'danger');
+            });
         }
 
         function completarRegistroNuevo(e) {

@@ -255,12 +255,7 @@
         <ul class="menu-links">
             <li><a href="/inicio/">Panel General</a></li>
             <li><a href="/rendimiento/" class="active">Ficha y Rendimiento</a></li>
-            <li>
-                <a href="/inseminacion/">Inseminación</a>
-                <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
-                    <li><a href="/inseminacion/diagnostico/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Diagnóstico de Preñez</a></li>
-                </ul>
-            </li>
+            <li><a href="/inseminacion/">Inseminación</a></li>
             <li><a href="/linaje/">Linaje Sanguíneo</a></li>
             <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
             <li><a href="/informes/">Informes</a></li>
@@ -549,9 +544,13 @@
             filas.forEach(function(fila) {
                 const texto = fila.getAttribute('data-texto') || '';
                 const coincide = !termino || texto.indexOf(termino) !== -1;
-                fila.style.display = coincide ? '' : 'none';
+                fila.setAttribute('data-filtered-out', coincide ? '0' : '1');
                 fila.classList.toggle('fila-destacada', Boolean(termino && coincide));
             });
+
+            if (window.refrescarPaginacionTablas) {
+                window.refrescarPaginacionTablas(true);
+            }
 
             if (!termino) {
                 renderizarFichaIndividual(null);

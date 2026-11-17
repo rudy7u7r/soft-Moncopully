@@ -86,7 +86,12 @@
         <ul class="menu-links">
             <li><a href="/inicio/">Panel General</a></li>
             <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
-            <li><a href="/inseminacion/" class="active">Inseminación</a></li>
+            <li>
+                <a href="/inseminacion/" class="active">Inseminación</a>
+                <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
+                    <li><a href="/inseminacion/diagnostico/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Diagnóstico de Preñez</a></li>
+                </ul>
+            </li>
             <li><a href="/linaje/">Linaje Sanguíneo</a></li>
             <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
             <li><a href="/informes/">Informes</a></li>
@@ -111,9 +116,14 @@
         {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
 
         <div class="content-wrapper">
-            <div class="page-title">
-                <a href="/inseminacion/" class="back-icon">&larr; Volver</a>
-                <h1>Registrar Nueva Inseminación</h1>
+            <div class="page-title" style="justify-content: space-between; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <a href="/inseminacion/" class="back-icon">&larr; Volver</a>
+                    <h1>Registrar Nueva Inseminación</h1>
+                </div>
+                <a href="/inseminacion/masiva/" style="background-color: #1565c0; color: white; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; font-weight: 700;">
+                    Ir a Inyección Masiva por RFID (1 Pajuela = 3 Vacas) &rarr;
+                </a>
             </div>
 
             <div class="content-card">

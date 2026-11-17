@@ -1,10 +1,11 @@
 import json
+import math
 import random
 import uuid
 from datetime import timedelta
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from django.db.models import Q, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.deletion import RestrictedError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
@@ -36,9 +37,49 @@ from .models import (
 )
 
 def _construir_metricas_reproductivas():
-    bovinos_qs = Bovino.objects.select_related('raza', 'madre', 'pajuela_semen').all().order_by('sexo', 'codigo_rfid')
-    bovinos_metricas = []
+    bovinos_qs = Bovino.objects.select_related('raza').all().order_by('sexo', 'codigo_rfid')
 
+    # Agregaciones en una sola pasada SQL para alto rendimiento con +1.500 bovinos
+    ins_por_vaca = {
+        r['vaca_id']: r['total']
+        for r in Inseminacion.objects.values('vaca_id').annotate(total=Count('id_inseminacion'))
+    }
+    diags_por_vaca = {}
+    for r in DiagnosticoGestacion.objects.values('inseminacion__vaca_id', 'resultado').annotate(total=Count('id_diagnostico')):
+        vid = r['inseminacion__vaca_id']
+        if vid not in diags_por_vaca:
+            diags_por_vaca[vid] = {'preñada': 0, 'vacia': 0, 'mortinato': 0}
+        diags_por_vaca[vid][r['resultado']] = r['total']
+
+    partos_vivos_por_vaca = {
+        r['diagnostico__inseminacion__vaca_id']: r['total']
+        for r in Parto.objects.exclude(tipo_parto__icontains='mortinato')
+        .values('diagnostico__inseminacion__vaca_id')
+        .annotate(total=Count('id_parto'))
+    }
+
+    pajuelas_por_toro = {}
+    for r in PajuelaSemen.objects.filter(toro__isnull=False).values('toro_id').annotate(num_lotes=Count('id_pajuela'), stock_actual=Sum('stock')):
+        pajuelas_por_toro[r['toro_id']] = {
+            'num_lotes': r['num_lotes'],
+            'stock_actual': r['stock_actual'] or 0,
+        }
+
+    ins_por_toro = {
+        r['pajuela__toro_id']: r['total']
+        for r in Inseminacion.objects.filter(pajuela__toro__isnull=False)
+        .values('pajuela__toro_id')
+        .annotate(total=Count('id_inseminacion'))
+    }
+
+    diags_por_toro = {}
+    for r in DiagnosticoGestacion.objects.filter(inseminacion__pajuela__toro__isnull=False).values('inseminacion__pajuela__toro_id', 'resultado').annotate(total=Count('id_diagnostico')):
+        tid = r['inseminacion__pajuela__toro_id']
+        if tid not in diags_por_toro:
+            diags_por_toro[tid] = {'preñada': 0, 'vacia': 0, 'mortinato': 0}
+        diags_por_toro[tid][r['resultado']] = r['total']
+
+    bovinos_metricas = []
     for bov in bovinos_qs:
         item = {
             "id": bov.id_bovino,
@@ -50,17 +91,15 @@ def _construir_metricas_reproductivas():
         }
 
         if bov.sexo == "Hembra":
-            ins_vaca = Inseminacion.objects.filter(vaca=bov)
-            total_ins = ins_vaca.count()
-            diags_vaca = DiagnosticoGestacion.objects.filter(inseminacion__vaca=bov)
-            preneces = diags_vaca.filter(resultado='preñada').count()
-            vacias = diags_vaca.filter(resultado='vacia').count()
-            mortinatos = diags_vaca.filter(resultado='mortinato').count()
-            partos_vivos = Parto.objects.filter(diagnostico__inseminacion__vaca=bov).exclude(tipo_parto__icontains='mortinato').count()
+            total_ins = ins_por_vaca.get(bov.id_bovino, 0)
+            dv = diags_por_vaca.get(bov.id_bovino, {})
+            preneces = dv.get('preñada', 0)
+            vacias = dv.get('vacia', 0)
+            mortinatos = dv.get('mortinato', 0)
+            partos_vivos = partos_vivos_por_vaca.get(bov.id_bovino, 0)
 
             total_partos_o_eventos = partos_vivos + preneces + mortinatos
             tasa_mortalidad = round((mortinatos / total_partos_o_eventos) * 100, 1) if total_partos_o_eventos > 0 else 0.0
-            total_con_prenez = preneces + mortinatos
             tasa_exito = round((preneces / total_ins) * 100, 1) if total_ins > 0 else 0.0
 
             item.update({
@@ -73,19 +112,16 @@ def _construir_metricas_reproductivas():
                 "tasa_exito": tasa_exito,
             })
         else:
-            lotes_toro = PajuelaSemen.objects.filter(toro=bov)
-            num_lotes = lotes_toro.count()
-            stock_actual = lotes_toro.aggregate(total=Sum('stock'))['total'] or 0
-
-            ins_toro = Inseminacion.objects.filter(pajuela__toro=bov)
-            total_ins_toro = ins_toro.count()
+            pt = pajuelas_por_toro.get(bov.id_bovino, {})
+            num_lotes = pt.get('num_lotes', 0)
+            stock_actual = pt.get('stock_actual', 0)
+            total_ins_toro = ins_por_toro.get(bov.id_bovino, 0)
             pajuelas_extraidas_total = stock_actual + total_ins_toro
 
-            diags_toro = DiagnosticoGestacion.objects.filter(inseminacion__pajuela__toro=bov)
-            exitos_toro = diags_toro.filter(resultado='preñada').count()
-            vacias_toro = diags_toro.filter(resultado='vacia').count()
-            mortinatos_toro = diags_toro.filter(resultado='mortinato').count()
-
+            dt = diags_por_toro.get(bov.id_bovino, {})
+            exitos_toro = dt.get('preñada', 0)
+            vacias_toro = dt.get('vacia', 0)
+            mortinatos_toro = dt.get('mortinato', 0)
             tasa_exito_toro = round((exitos_toro / total_ins_toro) * 100, 1) if total_ins_toro > 0 else 0.0
 
             item.update({
@@ -101,16 +137,26 @@ def _construir_metricas_reproductivas():
 
         bovinos_metricas.append(item)
 
+    ins_por_pajuela = {
+        r['pajuela_id']: r['total']
+        for r in Inseminacion.objects.values('pajuela_id').annotate(total=Count('id_inseminacion'))
+    }
+    diags_por_pajuela = {}
+    for r in DiagnosticoGestacion.objects.values('inseminacion__pajuela_id', 'resultado').annotate(total=Count('id_diagnostico')):
+        pid = r['inseminacion__pajuela_id']
+        if pid not in diags_por_pajuela:
+            diags_por_pajuela[pid] = {'preñada': 0, 'vacia': 0, 'mortinato': 0}
+        diags_por_pajuela[pid][r['resultado']] = r['total']
+
     pajuelas_qs = PajuelaSemen.objects.select_related('toro', 'toro__raza').all()
     pajuelas_metricas = []
 
     for paj in pajuelas_qs:
-        ins_paj = Inseminacion.objects.filter(pajuela=paj)
-        usos = ins_paj.count()
-        diags_paj = DiagnosticoGestacion.objects.filter(inseminacion__pajuela=paj)
-        exitos = diags_paj.filter(resultado='preñada').count()
-        vacias = diags_paj.filter(resultado='vacia').count()
-        mortinatos = diags_paj.filter(resultado='mortinato').count()
+        usos = ins_por_pajuela.get(paj.id_pajuela, 0)
+        dp = diags_por_pajuela.get(paj.id_pajuela, {})
+        exitos = dp.get('preñada', 0)
+        vacias = dp.get('vacia', 0)
+        mortinatos = dp.get('mortinato', 0)
         pendientes = max(0, usos - (exitos + vacias + mortinatos))
         tasa_exito = round((exitos / usos) * 100, 1) if usos > 0 else 0.0
 
@@ -191,12 +237,10 @@ def inicio(request):
         mort_data_ano.append(qs_mortinatos.filter(fecha_diagnostico__year=y).count())
         nac_data_ano.append(qs_partos_vivos.filter(fecha_parto__year=y).count())
 
-    ultimos_ingresos = Bovino.objects.order_by('-id_bovino')[:3]
+    ultimos_ingresos = Bovino.objects.order_by('-id_bovino')[:5]
 
     hembras = Bovino.objects.filter(sexo='Hembra').count()
     machos = Bovino.objects.filter(sexo='Macho').count()
-
-    bovinos_metricas, pajuelas_metricas = _construir_metricas_reproductivas()
     
     context = {
         'total_bovinos': total_bovinos,
@@ -204,9 +248,6 @@ def inicio(request):
         'total_paridas': total_paridas,
         'total_alertas': total_alertas,
         'ultimos_ingresos': ultimos_ingresos,
-        'bovinos_metricas': bovinos_metricas,
-        'bovinos_metricas_json': json.dumps(bovinos_metricas),
-        'pajuelas_metricas': pajuelas_metricas,
         'chart_series_json': json.dumps({
             'dia': {'labels': labels_dia, 'mortalidad': mort_data_dia, 'nacimientos': nac_data_dia},
             'mes': {'labels': nombres_meses, 'mortalidad': mort_data_mes, 'nacimientos': nac_data_mes},
@@ -523,6 +564,18 @@ def login(request):
                     return JsonResponse({"ok": True, "redirect": destino})
                 return redirect(destino)
 
+        # 2B-pre: Verificar que el correo Gmail no esté ya registrado en otra cuenta
+        if accion == "verificar_gmail":
+            email = (request.POST.get("email") or "").strip().lower()
+            if not email or "@" not in email:
+                return JsonResponse({"ok": False, "error": "Ingrese una dirección de correo Gmail válida (ej. usuario@gmail.com)."})
+            if Usuario.objects.filter(email__iexact=email).exists():
+                return JsonResponse({
+                    "ok": False,
+                    "error": "Este correo Gmail ya se encuentra registrado en otra cuenta. Cada usuario debe tener un correo único.",
+                })
+            return JsonResponse({"ok": True, "email": email})
+
         # 3. Paso 2B: Registrar nuevo RUT con Gmail y Contraseña (queda esperando permisos del Admin)
         elif accion == "registrar_nuevo":
             email = (request.POST.get("email") or "").strip().lower()
@@ -546,6 +599,11 @@ def login(request):
                 error_login = msg
             elif buscar_usuario_por_rut(rut_raw):
                 msg = "Este RUT ya se encuentra registrado."
+                if es_ajax:
+                    return JsonResponse({"ok": False, "error": msg})
+                error_login = msg
+            elif Usuario.objects.filter(email__iexact=email).exists():
+                msg = "Este correo Gmail ya se encuentra registrado en otra cuenta. Cada usuario debe tener un correo único."
                 if es_ajax:
                     return JsonResponse({"ok": False, "error": msg})
                 error_login = msg
@@ -649,65 +707,81 @@ def gestion_usuarios(request):
     asegurar_usuarios_iniciales()
     mensaje_exito = None
     mensaje_error = None
+    usuario_admin = obtener_usuario_activo(request)
+
+    if request.GET.get("lock") == "1":
+        request.session.pop("usuarios_desbloqueado", None)
+        return redirect("/usuarios/")
 
     if request.method == "POST":
         accion = request.POST.get("accion")
 
-        try:
-            if accion == "asignar_permisos":
-                uid = request.POST.get("usuario_id")
-                u_obj = Usuario.objects.get(pk=uid)
-                rol = (request.POST.get("rol") or "operario").strip()
-                if rol not in ("admin", "veterinario", "operario"):
-                    rol = "operario"
+        if accion == "desbloquear_panel":
+            password_ingresada = (request.POST.get("password_admin") or "").strip()
+            if usuario_admin and verificar_password_usuario(usuario_admin, password_ingresada):
+                request.session["usuarios_desbloqueado"] = True
+                mensaje_exito = "Identidad verificada. Panel de Roles y Permisos desbloqueado."
+            else:
+                mensaje_error = "Contraseña de Administrador incorrecta. No se pudo desbloquear el panel."
+        elif not request.session.get("usuarios_desbloqueado"):
+            mensaje_error = "Por seguridad, debe ingresar su contraseña de Administrador para desbloquear Roles y Permisos."
+        else:
+            try:
+                if accion == "asignar_permisos":
+                    uid = request.POST.get("usuario_id")
+                    u_obj = Usuario.objects.get(pk=uid)
+                    rol = (request.POST.get("rol") or "operario").strip()
+                    if rol not in ("admin", "veterinario", "operario"):
+                        rol = "operario"
 
-                es_admin_edit = rol == "admin"
-                u_obj.rol = rol
-                u_obj.aprobado_por_admin = True
-                u_obj.acceso_rendimiento = True if es_admin_edit else (request.POST.get("acceso_rendimiento") == "on")
-                u_obj.acceso_inseminacion = True if es_admin_edit else (request.POST.get("acceso_inseminacion") == "on")
-                u_obj.acceso_linaje = True if es_admin_edit else (request.POST.get("acceso_linaje") == "on")
-                u_obj.acceso_pajuelas = True if es_admin_edit else (request.POST.get("acceso_pajuelas") == "on")
-                u_obj.acceso_informes = True if es_admin_edit else (request.POST.get("acceso_informes") == "on")
-                u_obj.acceso_bovinos = True if es_admin_edit else (request.POST.get("acceso_bovinos") == "on")
-                u_obj.activo = True
-                u_obj.save()
-                mensaje_exito = f"Rol ({u_obj.get_rol_display()}) y permisos otorgados a {u_obj.rut} ({u_obj.email})."
+                    es_admin_edit = rol == "admin"
+                    u_obj.rol = rol
+                    u_obj.aprobado_por_admin = True
+                    u_obj.acceso_rendimiento = True if es_admin_edit else (request.POST.get("acceso_rendimiento") == "on")
+                    u_obj.acceso_inseminacion = True if es_admin_edit else (request.POST.get("acceso_inseminacion") == "on")
+                    u_obj.acceso_linaje = True if es_admin_edit else (request.POST.get("acceso_linaje") == "on")
+                    u_obj.acceso_pajuelas = True if es_admin_edit else (request.POST.get("acceso_pajuelas") == "on")
+                    u_obj.acceso_informes = True if es_admin_edit else (request.POST.get("acceso_informes") == "on")
+                    u_obj.acceso_bovinos = True if es_admin_edit else (request.POST.get("acceso_bovinos") == "on")
+                    u_obj.activo = True
+                    u_obj.save()
+                    mensaje_exito = f"Rol ({u_obj.get_rol_display()}) y permisos otorgados a {u_obj.rut} ({u_obj.email})."
 
-            elif accion == "poner_en_espera":
-                uid = request.POST.get("usuario_id")
-                u_obj = Usuario.objects.get(pk=uid)
-                if normalizar_rut(u_obj.rut) in ("1111111-1", "11111111-1"):
-                    raise ValidationError("La cuenta principal de Administrador no puede ser puesta en espera.")
-                if u_obj.rol == "admin" and Usuario.objects.filter(rol="admin", aprobado_por_admin=True).count() <= 1:
-                    raise ValidationError("No se puede revocar el acceso al único Administrador activo.")
-                u_obj.rol = "pendiente"
-                u_obj.aprobado_por_admin = False
-                u_obj.acceso_rendimiento = False
-                u_obj.acceso_inseminacion = False
-                u_obj.acceso_linaje = False
-                u_obj.acceso_pajuelas = False
-                u_obj.acceso_informes = False
-                u_obj.acceso_bovinos = False
-                u_obj.save()
-                mensaje_exito = f"Los permisos del usuario {u_obj.rut} fueron revocados (En espera)."
+                elif accion == "poner_en_espera":
+                    uid = request.POST.get("usuario_id")
+                    u_obj = Usuario.objects.get(pk=uid)
+                    if normalizar_rut(u_obj.rut) in ("1111111-1", "22127234-K"):
+                        raise ValidationError("La cuenta principal de Administrador no puede ser puesta en espera.")
+                    if u_obj.rol == "admin" and Usuario.objects.filter(rol="admin", aprobado_por_admin=True).count() <= 1:
+                        raise ValidationError("No se puede revocar el acceso al único Administrador activo.")
+                    u_obj.rol = "pendiente"
+                    u_obj.aprobado_por_admin = False
+                    u_obj.acceso_rendimiento = False
+                    u_obj.acceso_inseminacion = False
+                    u_obj.acceso_linaje = False
+                    u_obj.acceso_pajuelas = False
+                    u_obj.acceso_informes = False
+                    u_obj.acceso_bovinos = False
+                    u_obj.save()
+                    mensaje_exito = f"Los permisos del usuario {u_obj.rut} fueron revocados (En espera)."
 
-            elif accion == "eliminar_usuario":
-                uid = request.POST.get("usuario_id")
-                u_obj = Usuario.objects.get(pk=uid)
-                if normalizar_rut(u_obj.rut) in ("1111111-1", "11111111-1"):
-                    raise ValidationError("La cuenta principal de Administrador no puede ser eliminada del sistema.")
-                if u_obj.rol == "admin" and Usuario.objects.filter(rol="admin", aprobado_por_admin=True).count() <= 1:
-                    raise ValidationError("No se puede eliminar el único Administrador activo del sistema.")
-                rut_elim = u_obj.rut
-                u_obj.delete()
-                mensaje_exito = f"El registro del RUT {rut_elim} fue eliminado."
+                elif accion == "eliminar_usuario":
+                    uid = request.POST.get("usuario_id")
+                    u_obj = Usuario.objects.get(pk=uid)
+                    if normalizar_rut(u_obj.rut) in ("1111111-1", "22127234-K"):
+                        raise ValidationError("La cuenta principal de Administrador no puede ser eliminada del sistema.")
+                    if u_obj.rol == "admin" and Usuario.objects.filter(rol="admin", aprobado_por_admin=True).count() <= 1:
+                        raise ValidationError("No se puede eliminar el único Administrador activo del sistema.")
+                    rut_elim = u_obj.rut
+                    u_obj.delete()
+                    mensaje_exito = f"El registro del RUT {rut_elim} fue eliminado."
 
-        except ValidationError as e:
-            mensaje_error = e.message
-        except Exception:
-            mensaje_error = "Ocurrió un error al actualizar los permisos del usuario."
+            except ValidationError as e:
+                mensaje_error = e.message
+            except Exception:
+                mensaje_error = "Ocurrió un error al actualizar los permisos del usuario."
 
+    panel_bloqueado = not bool(request.session.get("usuarios_desbloqueado"))
     busqueda_rut = (request.GET.get("rut") or request.GET.get("q") or "").strip()
     usuarios_pendientes = list(Usuario.objects.filter(aprobado_por_admin=False).order_by("-id_usuario"))
     usuarios_aprobados = list(Usuario.objects.filter(aprobado_por_admin=True).order_by("id_usuario"))
@@ -726,6 +800,7 @@ def gestion_usuarios(request):
         ]
 
     return render(request, "gestor_biologica_monco/usuarios.html", {
+        "panel_bloqueado": panel_bloqueado,
         "usuarios_pendientes": usuarios_pendientes,
         "usuarios_aprobados": usuarios_aprobados,
         "busqueda_rut": busqueda_rut,
@@ -1200,83 +1275,325 @@ def nueva_inseminacion(request):
         "error": error_msg
     })
 
+
+def inseminacion_masiva(request):
+    """
+    Inyección / Inseminación Masiva por Escaneo RFID.
+    Permite que 1 pajuela rinda para N vacas (por defecto 3 vacas por 1 pajuela),
+    escaneando múltiples códigos RFID de vacas para inyectarlas de una sola vez
+    y descontando proporcionalmente las pajuelas utilizadas.
+    """
+    error_msg = None
+    reporte_masivo = None
+
+    if request.method == "POST":
+        pajuela_id = request.POST.get("pajuela_id")
+        fecha_servicio = request.POST.get("fecha_servicio") or timezone.localdate().isoformat()
+        vacas_por_pajuela_str = request.POST.get("vacas_por_pajuela", "3")
+        rfids_raw = request.POST.get("rfids_escaneados", "")
+
+        try:
+            vacas_por_pajuela = max(1, int(vacas_por_pajuela_str))
+        except ValueError:
+            vacas_por_pajuela = 3
+
+        # Extraer lista única de códigos RFID escaneados o separados por salto de línea / coma
+        codigos_rfid = []
+        vistos = set()
+        for token in rfids_raw.replace(",", "\n").replace(";", "\n").splitlines():
+            limpio = token.strip().upper()
+            if limpio and limpio not in vistos:
+                vistos.add(limpio)
+                codigos_rfid.append(limpio)
+
+        if not pajuela_id:
+            error_msg = "Debe seleccionar el lote de pajuela que utilizará para la inyección masiva."
+        elif not codigos_rfid:
+            error_msg = "Debe escanear o agregar al menos una vaca por su código RFID."
+        else:
+            try:
+                pajuela = PajuelaSemen.objects.select_related("toro").get(pk=pajuela_id)
+                pajuelas_requeridas = math.ceil(len(codigos_rfid) / vacas_por_pajuela)
+
+                if pajuela.stock < pajuelas_requeridas:
+                    error_msg = (
+                        f"Stock insuficiente en el lote {pajuela.lote_pajuela}: "
+                        f"para inyectar {len(codigos_rfid)} vacas (rendimiento: 1 pajuela cada {vacas_por_pajuela} vacas) "
+                        f"se necesitan {pajuelas_requeridas} pajuelas, pero solo hay {pajuela.stock} disponibles."
+                    )
+                else:
+                    mapa_vacas = {
+                        b.codigo_rfid.upper(): b
+                        for b in Bovino.objects.filter(sexo="Hembra").select_related("raza")
+                    }
+                    inyectadas_ok = []
+                    rechazadas = []
+
+                    for rfid_code in codigos_rfid:
+                        vaca_obj = mapa_vacas.get(rfid_code)
+                        if not vaca_obj:
+                            rechazadas.append({
+                                "rfid": rfid_code,
+                                "motivo": "Código RFID no encontrado como Vaca (Hembra) en la base de datos.",
+                            })
+                            continue
+
+                        try:
+                            nueva_ins = Inseminacion(
+                                vaca=vaca_obj,
+                                pajuela=pajuela,
+                                fecha_servicio=fecha_servicio,
+                            )
+                            nueva_ins.clean()
+                            nueva_ins.save()
+                            inyectadas_ok.append({
+                                "rfid": vaca_obj.codigo_rfid,
+                                "raza": vaca_obj.raza.nombre_raza if vaca_obj.raza else "-",
+                                "id_inseminacion": nueva_ins.id_inseminacion,
+                            })
+                        except ValidationError as ve:
+                            rechazadas.append({
+                                "rfid": vaca_obj.codigo_rfid,
+                                "motivo": ve.message if hasattr(ve, "message") else "; ".join(ve.messages),
+                            })
+                        except Exception:
+                            rechazadas.append({
+                                "rfid": vaca_obj.codigo_rfid,
+                                "motivo": "Error al validar o registrar la inseminación de esta vaca.",
+                            })
+
+                    pajuelas_descontadas = (
+                        math.ceil(len(inyectadas_ok) / vacas_por_pajuela) if inyectadas_ok else 0
+                    )
+                    if pajuelas_descontadas > 0:
+                        pajuela.stock = max(0, pajuela.stock - pajuelas_descontadas)
+                        pajuela.save(update_fields=["stock"])
+
+                    reporte_masivo = {
+                        "lote_pajuela": pajuela.lote_pajuela,
+                        "vacas_por_pajuela": vacas_por_pajuela,
+                        "total_escaneadas": len(codigos_rfid),
+                        "total_inyectadas": len(inyectadas_ok),
+                        "total_rechazadas": len(rechazadas),
+                        "pajuelas_descontadas": pajuelas_descontadas,
+                        "stock_restante": pajuela.stock,
+                        "inyectadas_ok": inyectadas_ok,
+                        "rechazadas": rechazadas,
+                    }
+            except PajuelaSemen.DoesNotExist:
+                error_msg = "El lote de pajuela seleccionado no existe."
+
+    vacas_disp_qs = vacas_disponibles().select_related("raza").order_by("codigo_rfid")
+    catalogo_vacas = [
+        {
+            "id": v.id_bovino,
+            "rfid": v.codigo_rfid,
+            "raza": v.raza.nombre_raza if v.raza else "Angus",
+            "estado": v.estado_actual,
+        }
+        for v in vacas_disp_qs
+    ]
+    pajuelas_disp = PajuelaSemen.objects.filter(stock__gt=0).select_related("toro", "toro__raza").order_by("lote_pajuela")
+
+    return render(request, "gestor_biologica_monco/inseminacion_masiva.html", {
+        "pajuelas": pajuelas_disp,
+        "catalogo_vacas_json": json.dumps(catalogo_vacas),
+        "total_vacas_disponibles": len(catalogo_vacas),
+        "fecha_hoy": timezone.localdate().isoformat(),
+        "error": error_msg,
+        "reporte": reporte_masivo,
+    })
+
+
 def registro_prenez(request):
     error_msg = None
     success_msg = None
+    modo_actual = request.GET.get('modo', 'individual')
 
     if request.method == 'POST':
-        inseminacion_id = request.POST.get('inseminacion_id')
-        resultado = request.POST.get('resultado')
-        semanas = request.POST.get('semanas') or 0
-        fecha_diagnostico = request.POST.get('fecha_diagnostico')
+        modo_post = request.POST.get('modo_diagnostico', 'individual')
+        modo_actual = modo_post
 
-        try:
-            ins = Inseminacion.objects.get(pk=inseminacion_id)
-            diag_existente = DiagnosticoGestacion.objects.filter(inseminacion=ins).first()
+        if modo_post == 'masivo':
+            fecha_diagnostico = request.POST.get('fecha_diagnostico') or timezone.localdate().isoformat()
+            semanas_default = int(request.POST.get('semanas') or 0)
+            resultado_default = request.POST.get('resultado') or 'preñada'
+            items_json = request.POST.get('diagnosticos_masivos_json', '[]')
 
-            if diag_existente:
-                diag_existente.resultado = resultado
-                diag_existente.semanas = semanas
-                diag_existente.fecha_diagnostico = fecha_diagnostico
-                diag_existente.clean()
-                diag_existente.save()
-                diag_obj = diag_existente
+            try:
+                lista_items = json.loads(items_json)
+            except Exception:
+                lista_items = []
+
+            if not lista_items:
+                error_msg = "Escanee o agregue al menos una vaca por su código RFID para procesar el diagnóstico masivo."
             else:
-                nuevo_diag = DiagnosticoGestacion(
-                    inseminacion=ins,
-                    resultado=resultado,
-                    semanas=semanas,
-                    fecha_diagnostico=fecha_diagnostico
-                )
-                nuevo_diag.clean() 
-                nuevo_diag.save()
-                diag_obj = nuevo_diag
+                procesados_ok = 0
+                errores_lote = []
 
-            if resultado == 'preñada':
-                ins.vaca.estado_actual = 'Preñada'
-                ins.vaca.save(update_fields=['estado_actual'])
-            elif resultado == 'vacia':
-                ins.vaca.estado_actual = 'Vacía'
-                ins.vaca.save(update_fields=['estado_actual'])
-            elif resultado == 'mortinato':
-                ins.vaca.estado_actual = 'Vacía'
-                ins.vaca.save(update_fields=['estado_actual'])
-                Parto.objects.update_or_create(
-                    diagnostico=diag_obj,
-                    defaults={
-                        'cria': None,
-                        'fecha_parto': fecha_diagnostico,
-                        'tipo_parto': 'Mortinato (Fallecido en Parto)',
-                        'observaciones': 'El ternero recién nacido falleció durante el parto.',
-                    }
-                )
-            
-            success_msg = "Diagnóstico registrado exitosamente. La tabla de inseminaciones y estadísticas han sido actualizadas."
-        except ValidationError as e:
-            error_msg = e.message
-        except Exception as e:
-            error_msg = "Error al procesar el registro. Verifique los datos ingresados."
+                for item in lista_items:
+                    ins_id = item.get('inseminacion_id')
+                    rfid_code = (item.get('rfid') or '').strip().upper()
+                    res_item = item.get('resultado') or resultado_default
+                    sem_item = int(item.get('semanas') if item.get('semanas') is not None else semanas_default)
+
+                    try:
+                        if ins_id:
+                            ins = Inseminacion.objects.select_related('vaca').get(pk=ins_id)
+                        else:
+                            ins = (
+                                Inseminacion.objects.select_related('vaca')
+                                .filter(vaca__codigo_rfid__iexact=rfid_code)
+                                .order_by('-fecha_servicio')
+                                .first()
+                            )
+                        if not ins:
+                            errores_lote.append(f"{rfid_code}: Sin registro de inseminación asociado.")
+                            continue
+
+                        diag_existente = DiagnosticoGestacion.objects.filter(inseminacion=ins).first()
+                        if diag_existente:
+                            diag_existente.resultado = res_item
+                            diag_existente.semanas = sem_item
+                            diag_existente.fecha_diagnostico = fecha_diagnostico
+                            diag_existente.clean()
+                            diag_existente.save()
+                            diag_obj = diag_existente
+                        else:
+                            nuevo_diag = DiagnosticoGestacion(
+                                inseminacion=ins,
+                                resultado=res_item,
+                                semanas=sem_item,
+                                fecha_diagnostico=fecha_diagnostico,
+                            )
+                            nuevo_diag.clean()
+                            nuevo_diag.save()
+                            diag_obj = nuevo_diag
+
+                        if res_item == 'preñada':
+                            ins.vaca.estado_actual = 'Preñada'
+                            ins.vaca.save(update_fields=['estado_actual'])
+                        elif res_item == 'vacia':
+                            ins.vaca.estado_actual = 'Vacía'
+                            ins.vaca.save(update_fields=['estado_actual'])
+                        elif res_item == 'mortinato':
+                            ins.vaca.estado_actual = 'Vacía'
+                            ins.vaca.save(update_fields=['estado_actual'])
+                            Parto.objects.update_or_create(
+                                diagnostico=diag_obj,
+                                defaults={
+                                    'cria': None,
+                                    'fecha_parto': fecha_diagnostico,
+                                    'tipo_parto': 'Mortinato (Fallecido en Parto)',
+                                    'observaciones': 'El ternero recién nacido falleció durante el parto (Diagnóstico Masivo RFID).',
+                                }
+                            )
+                        procesados_ok += 1
+                    except ValidationError as ve:
+                        msg_ve = ve.message if hasattr(ve, 'message') else "; ".join(ve.messages)
+                        errores_lote.append(f"{rfid_code or ins_id}: {msg_ve}")
+                    except Exception:
+                        errores_lote.append(f"{rfid_code or ins_id}: Error al guardar diagnóstico.")
+
+                if procesados_ok > 0:
+                    success_msg = f"Diagnóstico masivo por RFID completado: se registraron {procesados_ok} diagnósticos de gestación exitosamente."
+                if errores_lote:
+                    error_msg = "Observaciones en el lote: " + " | ".join(errores_lote[:5])
+        else:
+            inseminacion_id = request.POST.get('inseminacion_id')
+            resultado = request.POST.get('resultado')
+            semanas = request.POST.get('semanas') or 0
+            fecha_diagnostico = request.POST.get('fecha_diagnostico')
+
+            try:
+                ins = Inseminacion.objects.get(pk=inseminacion_id)
+                diag_existente = DiagnosticoGestacion.objects.filter(inseminacion=ins).first()
+
+                if diag_existente:
+                    diag_existente.resultado = resultado
+                    diag_existente.semanas = semanas
+                    diag_existente.fecha_diagnostico = fecha_diagnostico
+                    diag_existente.clean()
+                    diag_existente.save()
+                    diag_obj = diag_existente
+                else:
+                    nuevo_diag = DiagnosticoGestacion(
+                        inseminacion=ins,
+                        resultado=resultado,
+                        semanas=semanas,
+                        fecha_diagnostico=fecha_diagnostico
+                    )
+                    nuevo_diag.clean() 
+                    nuevo_diag.save()
+                    diag_obj = nuevo_diag
+
+                if resultado == 'preñada':
+                    ins.vaca.estado_actual = 'Preñada'
+                    ins.vaca.save(update_fields=['estado_actual'])
+                elif resultado == 'vacia':
+                    ins.vaca.estado_actual = 'Vacía'
+                    ins.vaca.save(update_fields=['estado_actual'])
+                elif resultado == 'mortinato':
+                    ins.vaca.estado_actual = 'Vacía'
+                    ins.vaca.save(update_fields=['estado_actual'])
+                    Parto.objects.update_or_create(
+                        diagnostico=diag_obj,
+                        defaults={
+                            'cria': None,
+                            'fecha_parto': fecha_diagnostico,
+                            'tipo_parto': 'Mortinato (Fallecido en Parto)',
+                            'observaciones': 'El ternero recién nacido falleció durante el parto.',
+                        }
+                    )
+                
+                success_msg = "Diagnóstico registrado exitosamente. La tabla de inseminaciones y estadísticas han sido actualizadas."
+            except ValidationError as e:
+                error_msg = e.message
+            except Exception as e:
+                error_msg = "Error al procesar el registro. Verifique los datos ingresados."
 
     # Incluye inseminaciones sin diagnóstico y aquellas con preñez activa aún sin parto registrado
-    inseminaciones_pendientes = Inseminacion.objects.select_related('vaca').filter(
-        Q(diagnosticogestacion__isnull=True)
-        | Q(diagnosticogestacion__resultado='preñada', diagnosticogestacion__parto__isnull=True)
-    ).distinct().order_by('-fecha_servicio')
+    inseminaciones_pendientes = list(
+        Inseminacion.objects.select_related('vaca', 'vaca__raza', 'pajuela')
+        .filter(
+            Q(diagnosticogestacion__isnull=True)
+            | Q(diagnosticogestacion__resultado='preñada', diagnosticogestacion__parto__isnull=True)
+        )
+        .distinct()
+        .order_by('-fecha_servicio')
+    )
+
+    catalogo_pendientes = [
+        {
+            "inseminacion_id": ins.id_inseminacion,
+            "rfid": ins.vaca.codigo_rfid,
+            "raza": ins.vaca.raza.nombre_raza if (ins.vaca and ins.vaca.raza) else "Angus",
+            "lote_pajuela": ins.pajuela.lote_pajuela if ins.pajuela else "-",
+            "fecha_servicio": ins.fecha_servicio.strftime("%d/%m/%Y"),
+            "estado_vaca": ins.vaca.estado_actual,
+        }
+        for ins in inseminaciones_pendientes
+    ]
 
     return render(request, "gestor_biologica_monco/registro_prenez.html", {
         "inseminaciones_pendientes": inseminaciones_pendientes,
+        "catalogo_pendientes_json": json.dumps(catalogo_pendientes),
+        "modo_actual": modo_actual,
         "fecha_hoy": timezone.localdate().isoformat(),
         "error": error_msg,
         "success": success_msg
     })
 
 def nuevo_bovino(request):
-    sexo_seleccionado = request.GET.get('sexo', '')
-    linaje_seleccionado = request.GET.get('linaje', '')
+    sexo_seleccionado = request.GET.get('sexo', 'Hembra') or 'Hembra'
+    linaje_seleccionado = request.GET.get('linaje', 'no') or 'no'
+    modo_seleccionado = request.GET.get('modo', 'individual') or 'individual'
     error_msg = None
+    success_msg = None
 
     if request.method == 'POST':
-        sexo = request.POST.get('sexo')
+        modo_post = request.POST.get('modo_ingreso', modo_seleccionado)
+        sexo = request.POST.get('sexo') or sexo_seleccionado
         fecha_nacimiento = request.POST.get('fecha_nacimiento')
         raza_id = request.POST.get('raza_id')
         estado_actual = request.POST.get('estado_actual')
@@ -1292,15 +1609,10 @@ def nuevo_bovino(request):
 
         try:
             raza = Raza.objects.get(pk=raza_id)
-            nuevo_bov = Bovino(
-                sexo=sexo,
-                fecha_nacimiento=fecha_nacimiento,
-                raza=raza,
-                estado_actual=estado_actual
-            )
-            
             vaca_madre_obj = None
             toro_padre_obj = None
+            madre_ext_obj = None
+            pajuela_semen_obj = None
 
             if linaje_seleccionado == 'si':
                 # Procesar Madre (Receptora)
@@ -1308,62 +1620,112 @@ def nuevo_bovino(request):
                     vaca_madre_obj = Bovino.objects.get(pk=vaca_madre_id)
                 elif tipo_madre == 'madre_externa' and madre_id:
                     if madre_id == 'nueva_externa':
-                        nueva_madre_ext = Madre.objects.create(
+                        madre_ext_obj = Madre.objects.create(
                             sexo='Hembra',
                             fecha_nacimiento=fecha_nacimiento,
                             estado_actual='Vaca Externa'
                         )
-                        nuevo_bov.madre = nueva_madre_ext
                     else:
-                        nuevo_bov.madre = Madre.objects.get(pk=madre_id)
+                        madre_ext_obj = Madre.objects.get(pk=madre_id)
 
                 # Procesar Padre (Reproductor)
                 if tipo_padre == 'pajuela' and pajuela_id:
-                    pajuela_obj = PajuelaSemen.objects.get(pk=pajuela_id)
-                    nuevo_bov.pajuela_semen = pajuela_obj
-                    if pajuela_obj.toro:
-                        toro_padre_obj = pajuela_obj.toro
+                    pajuela_semen_obj = PajuelaSemen.objects.get(pk=pajuela_id)
+                    if pajuela_semen_obj.toro:
+                        toro_padre_obj = pajuela_semen_obj.toro
                 elif tipo_padre == 'toro_registrado' and toro_padre_id:
                     toro_padre_obj = Bovino.objects.get(pk=toro_padre_id)
-                    pajuela_toro = PajuelaSemen.objects.filter(toro=toro_padre_obj).first()
-                    if pajuela_toro:
-                        nuevo_bov.pajuela_semen = pajuela_toro
+                    pajuela_semen_obj = PajuelaSemen.objects.filter(toro=toro_padre_obj).first()
                 elif tipo_padre == 'toro_externo' and toro_externo_id:
                     if toro_externo_id == 'nuevo_externo':
-                        nueva_pajuela_ext = PajuelaSemen.objects.create(
+                        pajuela_semen_obj = PajuelaSemen.objects.create(
                             toro=None,
                             fecha_extraccion=fecha_nacimiento,
                             stock=0
                         )
-                        nuevo_bov.pajuela_semen = nueva_pajuela_ext
                     else:
-                        nuevo_bov.pajuela_semen = PajuelaSemen.objects.get(pk=toro_externo_id)
-                
-            nuevo_bov.save()
+                        pajuela_semen_obj = PajuelaSemen.objects.get(pk=toro_externo_id)
 
-            # Registrar relaciones en Parentesco si provienen de bovinos registrados
-            if vaca_madre_obj:
-                Parentesco.objects.create(
-                    bovino=nuevo_bov,
-                    ancestro=vaca_madre_obj,
-                    generacion=1,
-                    coef_relacion=0.5
-                )
-            if toro_padre_obj:
-                Parentesco.objects.create(
-                    bovino=nuevo_bov,
-                    ancestro=toro_padre_obj,
-                    generacion=1,
-                    coef_relacion=0.5
-                )
+            if modo_post == 'masivo':
+                rfids_masivos_raw = (request.POST.get('rfids_masivos') or '').strip()
+                codigos_ingresar = []
+                vistos = set()
+                for token in rfids_masivos_raw.replace(',', '\n').replace(';', '\n').splitlines():
+                    limpio = token.strip().upper()
+                    if limpio and limpio not in vistos:
+                        vistos.add(limpio)
+                        codigos_ingresar.append(limpio)
 
-            return redirect('/inicio/')
+                if not codigos_ingresar:
+                    raise ValidationError("Escanee o ingrese al menos un código RFID en la lista para el ingreso masivo.")
+
+                existentes = set(
+                    Bovino.objects.filter(codigo_rfid__in=codigos_ingresar).values_list('codigo_rfid', flat=True)
+                )
+                nuevos_creados = 0
+                for rfid_code in codigos_ingresar:
+                    if rfid_code in existentes:
+                        continue
+                    nb = Bovino.objects.create(
+                        codigo_rfid=rfid_code,
+                        sexo=sexo,
+                        fecha_nacimiento=fecha_nacimiento,
+                        raza=raza,
+                        estado_actual=estado_actual,
+                        madre=madre_ext_obj,
+                        pajuela_semen=pajuela_semen_obj,
+                    )
+                    if vaca_madre_obj:
+                        Parentesco.objects.create(bovino=nb, ancestro=vaca_madre_obj, generacion=1, coef_relacion=0.5)
+                    if toro_padre_obj:
+                        Parentesco.objects.create(bovino=nb, ancestro=toro_padre_obj, generacion=1, coef_relacion=0.5)
+                    nuevos_creados += 1
+
+                if nuevos_creados == 0:
+                    raise ValidationError("Todos los códigos RFID escaneados ya se encontraban registrados en la base de datos.")
+
+                return redirect('/inicio/')
+            else:
+                codigo_rfid_manual = (request.POST.get('codigo_rfid_manual') or '').strip().upper()
+                nuevo_bov = Bovino(
+                    sexo=sexo,
+                    fecha_nacimiento=fecha_nacimiento,
+                    raza=raza,
+                    estado_actual=estado_actual,
+                    madre=madre_ext_obj,
+                    pajuela_semen=pajuela_semen_obj,
+                )
+                if codigo_rfid_manual:
+                    if Bovino.objects.filter(codigo_rfid=codigo_rfid_manual).exists():
+                        raise ValidationError(f"El código RFID '{codigo_rfid_manual}' ya existe en el sistema.")
+                    nuevo_bov.codigo_rfid = codigo_rfid_manual
+
+                nuevo_bov.save()
+
+                if vaca_madre_obj:
+                    Parentesco.objects.create(
+                        bovino=nuevo_bov,
+                        ancestro=vaca_madre_obj,
+                        generacion=1,
+                        coef_relacion=0.5
+                    )
+                if toro_padre_obj:
+                    Parentesco.objects.create(
+                        bovino=nuevo_bov,
+                        ancestro=toro_padre_obj,
+                        generacion=1,
+                        coef_relacion=0.5
+                    )
+
+                return redirect('/inicio/')
             
-        except Exception as e:
+        except ValidationError as ve:
+            error_msg = ve.message if hasattr(ve, 'message') else "; ".join(ve.messages)
+        except Exception:
             error_msg = "Error al guardar el registro en la base de datos. Verifique los campos."
 
     razas = Raza.objects.all()
-    vacas_registradas = Bovino.objects.filter(sexo='Hembra').select_related('raza').order_by('codigo_rfid') if linaje_seleccionado == 'si' else []
+    vacas_registradas = Bovino.objects.filter(sexo='Hembra').select_related('raza').order_by('codigo_rfid')[:300] if linaje_seleccionado == 'si' else []
     madres = Madre.objects.all() if linaje_seleccionado == 'si' else []
     pajuelas = PajuelaSemen.objects.select_related('toro').all() if linaje_seleccionado == 'si' else []
     toros_registrados = Bovino.objects.filter(sexo='Macho').select_related('raza').order_by('codigo_rfid') if linaje_seleccionado == 'si' else []
@@ -1372,11 +1734,14 @@ def nuevo_bovino(request):
     return render(request, "gestor_biologica_monco/nuevo_bovino.html", {
         "sexo": sexo_seleccionado,
         "linaje": linaje_seleccionado,
+        "modo": modo_seleccionado,
+        "fecha_hoy": timezone.localdate().isoformat(),
         "razas": razas,
         "vacas_registradas": vacas_registradas,
         "madres": madres,
         "pajuelas": pajuelas,
         "toros_registrados": toros_registrados,
         "pajuelas_externas": pajuelas_externas,
-        "error": error_msg
+        "error": error_msg,
+        "success": success_msg,
     })

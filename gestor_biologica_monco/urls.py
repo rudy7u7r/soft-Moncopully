@@ -5,8 +5,8 @@ from . import views
 app_name = 'gestor_biologica_monco'
 
 urlpatterns = [
-    # Agrega esta línea para manejar la ruta principal (cuando entras a 127.0.0.1:8000)
-    path('', views.inicio, name='raiz'), 
+    # La ruta raíz (127.0.0.1:8000) envía siempre a la pantalla de inicio de sesión
+    path('', views.login, name='raiz'), 
     
     # Tus otras rutas que ya tenías
     path('inicio/', views.inicio, name='inicio'),
@@ -19,6 +19,7 @@ urlpatterns = [
     path('usuarios/', views.gestion_usuarios, name='gestion_usuarios'),
     path('inseminacion/', views.inseminacion, name='inseminacion'),
     path('inseminacion/nueva/', views.nueva_inseminacion, name='nueva_inseminacion'),
+    path('inseminacion/masiva/', views.inseminacion_masiva, name='inseminacion_masiva'),
     path('inseminacion/diagnostico/', views.registro_prenez, name='registro_prenez'),
     path('pajuelas/', views.pajuelas, name='pajuelas'),
     path('pajuelas/nueva/', views.nueva_pajuela, name='nueva_pajuela'),

@@ -184,6 +184,15 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
+    /* Submenú de Diagnóstico de Preñez visible únicamente cuando Inseminación está seleccionada */
+    .sidebar .menu-links > li > ul {
+        display: none !important;
+    }
+    .sidebar .menu-links > li > a.active + ul,
+    .sidebar .menu-links > li:has(a.active) > ul {
+        display: block !important;
+    }
+
     .logout {
         padding: 14px;
         margin-top: auto;
@@ -526,5 +535,81 @@
     .report-box:hover, .lineage-box:hover {
         transform: translateY(-3px);
         box-shadow: var(--shadow-hover);
+    }
+
+    /* Barra de Paginación de Tablas (1, 2, 3, 4...) */
+    .monco-pagination-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: #f4fbf6;
+        border: 1px solid #cfe3d5;
+        border-radius: 10px;
+    }
+    .monco-pagination-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+        color: #2f4b39;
+        font-weight: 600;
+        flex-wrap: wrap;
+    }
+    .monco-page-size-select {
+        padding: 5px 10px;
+        border: 1px solid #b8d3c0;
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--primary);
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        outline: none;
+    }
+    .monco-pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .monco-page-btn {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 10px;
+        border-radius: 7px;
+        border: 1px solid #c5dccb;
+        background: #ffffff;
+        color: var(--primary);
+        font-size: 0.84rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.18s ease;
+    }
+    .monco-page-btn:hover:not(:disabled) {
+        background: #e3f3e8;
+        border-color: var(--primary);
+    }
+    .monco-page-btn.active {
+        background: var(--primary);
+        color: #ffffff;
+        border-color: var(--primary);
+        box-shadow: 0 3px 8px rgba(20, 83, 45, 0.22);
+    }
+    .monco-page-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+    .monco-page-dots {
+        padding: 0 4px;
+        color: #647c6c;
+        font-weight: 700;
+        font-size: 0.85rem;
     }
 </style>

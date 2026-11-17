@@ -86,7 +86,7 @@
             <li><a href="/inicio/">Panel General</a></li>
             <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
             <li>
-                <a href="/inseminacion/">Inseminación</a>
+                <a href="/inseminacion/" class="active">Inseminación</a>
                 <!-- Subcampo de Preñez -->
                 <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
                     <li><a href="/inseminacion/diagnostico/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Diagnóstico de Preñez</a></li>
@@ -116,9 +116,12 @@
         {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
 
         <div class="content-card">
-            <div class="page-title">
+            <div class="page-title" style="flex-wrap: wrap; gap: 12px;">
                 <h1>Registros de Inseminación</h1>
-                <a href="/inseminacion/nueva/" class="btn-primary">Registrar Nueva Inseminación</a>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="/inseminacion/masiva/" class="btn-primary" style="background-color: #1565c0;">Inyección Masiva por RFID (1 Pajuela = N Vacas)</a>
+                    <a href="/inseminacion/nueva/" class="btn-primary">Registrar Nueva Inseminación</a>
+                </div>
             </div>
 
             <div class="table-container">

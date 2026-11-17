@@ -76,16 +76,16 @@ def verificar_password_usuario(usuario, raw_password):
     return False
 
 
-RUTS_ADMIN_PROTEGIDOS = ("1111111-1", "11111111-1")
+RUTS_ADMIN_PROTEGIDOS = ("1111111-1", "22127234-K")
 
 
 def asegurar_usuarios_iniciales():
-    """Garantiza que los usuarios base y la cuenta de Administrador estén siempre creados y aprobados."""
+    """Garantiza que la cuenta principal de Administrador (1.111.111-1) esté siempre creada y aprobada."""
     try:
         if not Usuario.objects.exists():
             Usuario.objects.create(
                 rut="1.111.111-1",
-                nombre_completo="Jordan Loaiza (Administrador)",
+                nombre_completo="jordan loaiza",
                 email="jordanloaiza@gmail.com",
                 password=make_password("admin123"),
                 rol="admin",
@@ -94,77 +94,31 @@ def asegurar_usuarios_iniciales():
                 acceso_inseminacion=True,
                 acceso_linaje=True,
                 acceso_pajuelas=True,
-                acceso_informes=True,
-                acceso_bovinos=True,
-                activo=True,
-            )
-            Usuario.objects.create(
-                rut="11.111.111-1",
-                nombre_completo="Administrador General",
-                email="jordanloaiza@gmail.com",
-                password=make_password("admin123"),
-                rol="admin",
-                aprobado_por_admin=True,
-                acceso_rendimiento=True,
-                acceso_inseminacion=True,
-                acceso_linaje=True,
-                acceso_pajuelas=True,
-                acceso_informes=True,
-                acceso_bovinos=True,
-                activo=True,
-            )
-            Usuario.objects.create(
-                rut="22.222.222-2",
-                nombre_completo="Médico Veterinario",
-                email="veterinario.moncopulli@gmail.com",
-                password=make_password("vet123"),
-                rol="veterinario",
-                aprobado_por_admin=True,
-                acceso_rendimiento=True,
-                acceso_inseminacion=True,
-                acceso_linaje=True,
-                acceso_pajuelas=True,
-                acceso_informes=False,
-                acceso_bovinos=False,
-                activo=True,
-            )
-            Usuario.objects.create(
-                rut="33.333.333-3",
-                nombre_completo="Operario de Terreno",
-                email="terreno.moncopulli@gmail.com",
-                password=make_password("terreno123"),
-                rol="operario",
-                aprobado_por_admin=True,
-                acceso_rendimiento=True,
-                acceso_inseminacion=False,
-                acceso_linaje=False,
-                acceso_pajuelas=False,
                 acceso_informes=True,
                 acceso_bovinos=True,
                 activo=True,
             )
         else:
             ruts_existentes = {normalizar_rut(u.rut): u for u in Usuario.objects.all()}
-            # Si se borró accidentalmente el RUT administrador 1.111.111-1 o 11.111.111-1, restaurarlo
-            for rut_admin_visual, norm_key in (("1.111.111-1", "1111111-1"), ("11.111.111-1", "11111111-1")):
-                if norm_key not in ruts_existentes:
-                    Usuario.objects.create(
-                        rut=rut_admin_visual,
-                        nombre_completo="jordan loaiza",
-                        email="jordanloaiza@gmail.com",
-                        password=make_password("admin123"),
-                        rol="admin",
-                        aprobado_por_admin=True,
-                        acceso_rendimiento=True,
-                        acceso_inseminacion=True,
-                        acceso_linaje=True,
-                        acceso_pajuelas=True,
-                        acceso_informes=True,
-                        acceso_bovinos=True,
-                        activo=True,
-                    )
+            # Si se borró accidentalmente el RUT administrador 1.111.111-1, restaurarlo
+            if "1111111-1" not in ruts_existentes:
+                Usuario.objects.create(
+                    rut="1.111.111-1",
+                    nombre_completo="jordan loaiza",
+                    email="jordanloaiza@gmail.com",
+                    password=make_password("admin123"),
+                    rol="admin",
+                    aprobado_por_admin=True,
+                    acceso_rendimiento=True,
+                    acceso_inseminacion=True,
+                    acceso_linaje=True,
+                    acceso_pajuelas=True,
+                    acceso_informes=True,
+                    acceso_bovinos=True,
+                    activo=True,
+                )
 
-            # Asegurar que los RUTs de Administrador (1.111.111-1 y 11.111.111-1) estén siempre habilitados como Admin
+            # Asegurar que el RUT de Administrador (1.111.111-1) esté siempre habilitado como Admin
             for u in Usuario.objects.all():
                 cambios = []
                 if normalizar_rut(u.rut) in RUTS_ADMIN_PROTEGIDOS:
@@ -225,27 +179,27 @@ def obtener_usuario_activo(request):
         if u and u.activo:
             return u
 
-    return Usuario.objects.filter(rol="admin", activo=True).first() or Usuario.objects.filter(activo=True).first()
+    return None
 
 
 def contexto_rbac(request):
     usuario = obtener_usuario_activo(request)
     if not usuario:
         return {
-            "rol_actual": "admin",
-            "rol_titulo": "Administrador",
-            "usuario_nombre_activo": "Administrador",
-            "usuario_rut_activo": "11.111.111-1",
-            "usuario_email_activo": "admin.moncopulli@gmail.com",
-            "es_admin": True,
-            "aprobado_por_admin": True,
-            "puede_inicio": True,
-            "puede_rendimiento": True,
-            "puede_inseminacion": True,
-            "puede_linaje": True,
-            "puede_pajuelas": True,
-            "puede_informes": True,
-            "puede_bovino_nuevo": True,
+            "rol_actual": "pendiente",
+            "rol_titulo": "Sin Sesión",
+            "usuario_nombre_activo": "Invitado",
+            "usuario_rut_activo": "",
+            "usuario_email_activo": "",
+            "es_admin": False,
+            "aprobado_por_admin": False,
+            "puede_inicio": False,
+            "puede_rendimiento": False,
+            "puede_inseminacion": False,
+            "puede_linaje": False,
+            "puede_pajuelas": False,
+            "puede_informes": False,
+            "puede_bovino_nuevo": False,
             "solicitudes_pendientes_count": 0,
         }
 
@@ -273,8 +227,8 @@ def contexto_rbac(request):
 
 class ControlAccesoRolMiddleware:
     """
-    Middleware que verifica en base de datos si el usuario ya fue aprobado por el Administrador
-    y si cuenta con permiso para el módulo solicitado.
+    Middleware que verifica que el usuario haya iniciado sesión, que esté aprobado por el Administrador
+    y que cuente con permiso para el módulo solicitado.
     """
 
     def __init__(self, get_response):
@@ -282,6 +236,10 @@ class ControlAccesoRolMiddleware:
 
     def __call__(self, request):
         path = request.path or "/"
+
+        # Al entrar a la raíz (127.0.0.1:8000/), enviar siempre a la pantalla de Iniciar Sesión
+        if path == "/":
+            return redirect("/login/?logout=1")
 
         if (
             path.startswith("/login")
@@ -291,11 +249,19 @@ class ControlAccesoRolMiddleware:
         ):
             return self.get_response(request)
 
+        usuario = obtener_usuario_activo(request)
+        if not usuario:
+            return redirect("/login/")
+
         ctx = contexto_rbac(request)
 
         # Si el usuario aún está esperando aprobación del Administrador, enviarlo a la sala de espera
         if not ctx["aprobado_por_admin"] or ctx["rol_actual"] == "pendiente":
             return redirect("/esperando-permisos/")
+
+        # Si el usuario navega a cualquier módulo distinto de /usuarios, bloquear automáticamente el panel de Roles y Permisos
+        if not path.startswith("/usuarios") and not path.startswith("/static"):
+            request.session.pop("usuarios_desbloqueado", None)
 
         if path.startswith("/usuarios") and not ctx["es_admin"]:
             return redirect("/inicio/?acceso_restringido=usuarios")

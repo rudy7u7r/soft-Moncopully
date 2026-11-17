@@ -256,12 +256,7 @@
         <ul class="menu-links">
             <li><a href="/inicio/" class="active">Panel General</a></li>
             <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
-            <li>
-                <a href="/inseminacion/">Inseminación</a>
-                <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
-                    <li><a href="/inseminacion/diagnostico/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Diagnóstico de Preñez</a></li>
-                </ul>
-            </li>
+            <li><a href="/inseminacion/">Inseminación</a></li>
             <li><a href="/linaje/">Linaje Sanguíneo</a></li>
             <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
             <li><a href="/informes/">Informes</a></li>
@@ -351,42 +346,8 @@
         </div>
 
         <div class="bottom-layout">
-            <!-- COLUMNA IZQUIERDA: Descripción de Bovino (Vaca / Toro) + Registro Rápido -->
+            <!-- COLUMNA IZQUIERDA: Registro Rápido + Accesos Directos -->
             <div class="left-column">
-                <!-- Casilla Izquierda: Ficha Descriptiva y Rendimiento de Bovino -->
-                <div class="panel-card">
-                    <h3>
-                        <span>Descripción y Rendimiento de Bovino</span>
-                        <span class="panel-subtitle">Vacas y Toros</span>
-                    </h3>
-
-                    <div class="bovino-filter-bar">
-                        <button type="button" class="bovino-type-btn active" id="btnFiltroTodos" onclick="filtrarSelectorBovinos('todos')">Todos</button>
-                        <button type="button" class="bovino-type-btn" id="btnFiltroHembras" onclick="filtrarSelectorBovinos('Hembra')">Vacas (Hembras)</button>
-                        <button type="button" class="bovino-type-btn" id="btnFiltroMachos" onclick="filtrarSelectorBovinos('Macho')">Toros (Machos)</button>
-                    </div>
-
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 5px; color: var(--text-main);">Buscar por Código RFID</label>
-                        <input type="text" id="inputBuscarRfidDashboard" oninput="filtrarSelectorBovinos(filtroSexoActual)" placeholder="Escriba el código RFID o raza..." style="width: 100%; padding: 9px 11px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.88rem; outline: none; background-color: #fff;">
-                    </div>
-
-                    <div>
-                        <label style="display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 6px; color: var(--text-main);">Seleccione Vaca o Toro Registrado</label>
-                        <select id="selectBovinoInspector" onchange="mostrarDetalleBovino()" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; outline: none; background-color: #fff;">
-                        </select>
-                    </div>
-
-                    <div id="contenedorDetalleBovino" class="bovino-detail-card">
-                        <!-- Se completa dinámicamente según el bovino seleccionado -->
-                    </div>
-                </div>
-
-                <div class="quick-actions-row">
-                    <a href="/linaje/" class="btn-action" style="background-color: var(--primary); color: white;">Consultar Linaje Sanguíneo</a>
-                    <a href="/informes/" class="btn-action">Generar Reporte Excel</a>
-                </div>
-
                 <!-- Módulo de registro rápido -->
                 <div class="panel-card">
                     <h3>Agregar Nuevo Bovino</h3>
@@ -409,67 +370,29 @@
                             </select>
                         </div>
 
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: var(--text-main);">Modalidad de Ingreso</label>
+                            <select name="modo" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; outline: none; background-color: #fff;">
+                                <option value="individual">Registro Individual (1 Animal)</option>
+                                <option value="masivo">Ingreso Masivo por Escaneo RFID (Múltiples Vacas)</option>
+                            </select>
+                        </div>
+
                         <button type="submit" style="background-color: var(--primary); color: white; padding: 12px; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 5px; transition: background 0.2s;" onmouseover="this.style.backgroundColor='var(--primary-light)'" onmouseout="this.style.backgroundColor='var(--primary)'">
                             Continuar Registro
                         </button>
                     </form>
                 </div>
+
+                <div class="quick-actions-row" style="grid-template-columns: repeat(3, 1fr);">
+                    <a href="/inseminacion/masiva/" class="btn-action" style="background-color: #1565c0; color: white;">Inyección Masiva RFID</a>
+                    <a href="/linaje/" class="btn-action" style="background-color: var(--primary); color: white;">Consultar Linaje Sanguíneo</a>
+                    <a href="/informes/" class="btn-action">Generar Reporte Excel</a>
+                </div>
             </div>
             
-            <!-- COLUMNA DERECHA: Rendimiento de Pajuelas de Semen + Últimos Registros -->
+            <!-- COLUMNA DERECHA: Últimos Registros RFID -->
             <div class="right-column">
-                <div class="panel-card">
-                    <h3>
-                        <span>Efectividad de Lotes de Pajuelas en Inseminación</span>
-                        <a href="/pajuelas/" style="font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 600;">Ver Inventario &rarr;</a>
-                    </h3>
-                    <div style="overflow-x: auto;">
-                        <table class="pajuela-table">
-                            <thead>
-                                <tr>
-                                    <th>Lote Pajuela</th>
-                                    <th>Toro / Procedencia</th>
-                                    <th>Stock Actual</th>
-                                    <th>Inyectadas</th>
-                                    <th>Éxitos (Preñez)</th>
-                                    <th>Efectividad</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for p in pajuelas_metricas %}
-                                <tr>
-                                    <td><strong>{{ p.lote_pajuela }}</strong></td>
-                                    <td>{{ p.origen }}</td>
-                                    <td>
-                                        <span class="badge {% if p.stock <= 10 %}badge-danger{% endif %}">{{ p.stock }} disp.</span>
-                                    </td>
-                                    <td>{{ p.usos }} serv.</td>
-                                    <td>
-                                        <strong>{{ p.exitos }}</strong> preñeces
-                                        {% if p.mortinatos > 0 %}
-                                            <span style="font-size: 0.74rem; color: #c62828; display: block;">({{ p.mortinatos }} mortinato)</span>
-                                        {% endif %}
-                                    </td>
-                                    <td style="min-width: 110px;">
-                                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--primary);">
-                                            <span>{{ p.tasa_exito }}%</span>
-                                            <span style="color: #888; font-weight: 500;">({{ p.exitos }}/{{ p.usos }})</span>
-                                        </div>
-                                        <div class="progress-track">
-                                            <div class="progress-fill" style="width: {{ p.tasa_exito }}%;"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">No hay lotes de pajuelas registrados.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
                 <div class="panel-card">
                     <h3>Últimos Registros RFID</h3>
                     <ul class="recent-list">
@@ -518,7 +441,6 @@
         // Series dinámicas para Día, Mes y Año
         const chartSeries = {{ chart_series_json|safe|default:"{}" }};
         const dataSexos = {{ chart_data_sexos|safe|default:"[0, 0]" }};
-        const bovinosMetricas = {{ bovinos_metricas_json|safe|default:"[]" }};
 
         // 1. Gráfico de Mortalidad Neonatal (Terneros recién nacidos fallecidos en el parto)
         const ctxMortalidad = document.getElementById('chartMortalidad').getContext('2d');
@@ -612,117 +534,6 @@
                 }
             }
         });
-
-        // 4. Inspector de Descripción y Rendimiento de Bovinos (Vacas y Toros)
-        let filtroSexoActual = 'todos';
-
-        function filtrarSelectorBovinos(sexo) {
-            filtroSexoActual = sexo;
-            document.getElementById('btnFiltroTodos').classList.toggle('active', sexo === 'todos');
-            document.getElementById('btnFiltroHembras').classList.toggle('active', sexo === 'Hembra');
-            document.getElementById('btnFiltroMachos').classList.toggle('active', sexo === 'Macho');
-
-            const select = document.getElementById('selectBovinoInspector');
-            select.innerHTML = '';
-
-            const inputRfid = document.getElementById('inputBuscarRfidDashboard');
-            const termino = inputRfid ? (inputRfid.value || '').trim().toUpperCase() : '';
-
-            const filtrados = bovinosMetricas.filter(function(b) {
-                const pasaSexo = sexo === 'todos' ? true : b.sexo === sexo;
-                const pasaTexto = !termino || b.codigo_rfid.toUpperCase().indexOf(termino) !== -1 || b.raza.toUpperCase().indexOf(termino) !== -1;
-                return pasaSexo && pasaTexto;
-            });
-
-            if (filtrados.length === 0) {
-                const opt = document.createElement('option');
-                opt.value = '';
-                opt.textContent = 'No hay bovinos registrados en esta categoría';
-                select.appendChild(opt);
-                mostrarDetalleBovino();
-                return;
-            }
-
-            filtrados.forEach(function(b) {
-                const opt = document.createElement('option');
-                opt.value = b.id;
-                const tipoLabel = b.sexo === 'Hembra' ? 'Vaca' : 'Toro';
-                opt.textContent = tipoLabel + ': ' + b.codigo_rfid + ' | Raza: ' + b.raza + ' (' + b.estado_actual + ')';
-                select.appendChild(opt);
-            });
-
-            mostrarDetalleBovino();
-        }
-
-        function mostrarDetalleBovino() {
-            const select = document.getElementById('selectBovinoInspector');
-            const contenedor = document.getElementById('contenedorDetalleBovino');
-            const idSel = parseInt(select.value, 10);
-
-            const bov = bovinosMetricas.find(function(item) { return item.id === idSel; });
-            if (!bov) {
-                contenedor.innerHTML = '<div style="text-align: center; color: #888; font-size: 0.88rem; padding: 12px;">Seleccione un ejemplar para visualizar sus indicadores reproductivos.</div>';
-                return;
-            }
-
-            if (bov.sexo === 'Hembra') {
-                contenedor.innerHTML =
-                    '<div class="bovino-meta-header">' +
-                        '<div>' +
-                            '<div class="bovino-rfid-title">Vaca RFID: ' + bov.codigo_rfid + '</div>' +
-                            '<div style="font-size: 0.8rem; color: #666;">Raza: ' + bov.raza + ' | Nac.: ' + bov.fecha_nacimiento + '</div>' +
-                        '</div>' +
-                        '<span class="badge">' + bov.estado_actual + '</span>' +
-                    '</div>' +
-                    '<div class="bovino-stats-grid">' +
-                        '<div class="stat-mini-box">' +
-                            '<div class="lbl">Inseminaciones Recibidas</div>' +
-                            '<div class="val">' + bov.total_inseminaciones + '</div>' +
-                        '</div>' +
-                        '<div class="stat-mini-box">' +
-                            '<div class="lbl">Inseminaciones Exitosas</div>' +
-                            '<div class="val success">' + bov.preneces_exitosas + ' (' + bov.tasa_exito + '%)</div>' +
-                        '</div>' +
-                        '<div class="stat-mini-box">' +
-                            '<div class="lbl">Tasa Mortalidad en Parto</div>' +
-                            '<div class="val danger">' + bov.tasa_mortalidad + '%</div>' +
-                        '</div>' +
-                        '<div class="stat-mini-box">' +
-                            '<div class="lbl">Terneros Fallecidos / Vivos</div>' +
-                            '<div class="val">' + bov.mortinatos + ' / ' + bov.partos_vivos + '</div>' +
-                        '</div>' +
-                    '</div>';
-            } else {
-                contenedor.innerHTML =
-                    '<div class="bovino-meta-header">' +
-                        '<div>' +
-                            '<div class="bovino-rfid-title">Toro RFID: ' + bov.codigo_rfid + '</div>' +
-                            '<div style="font-size: 0.8rem; color: #666;">Raza: ' + bov.raza + ' | Nac.: ' + bov.fecha_nacimiento + '</div>' +
-                        '</div>' +
-                        '<span class="badge">' + bov.estado_actual + '</span>' +
-                    '</div>' +
-                    '<div class="bovino-stats-grid">' +
-                        '<div class="stat-mini-box">' +
-                            '<div class="lbl">Pajuelas Extraídas (Stock / Total)</div>' +
-                            '<div class="val">' + bov.stock_actual_pajuelas + ' / ' + bov.pajuelas_extraidas_total + '</div>' +
-                        '</div>' +
-                        '<div class="stat-mini-box">' +
-                            '<div class="lbl">Lotes Registrados</div>' +
-                            '<div class="val">' + bov.lotes_extraidos + ' lotes</div>' +
-                        '</div>' +
-                        '<div class="stat-mini-box">' +
-                            '<div class="lbl">Inseminaciones con su Semen</div>' +
-                            '<div class="val">' + bov.inseminaciones_con_su_semen + '</div>' +
-                        '</div>' +
-                        '<div class="stat-mini-box">' +
-                            '<div class="lbl">Inseminaciones con Éxito</div>' +
-                            '<div class="val success">' + bov.inseminaciones_exitosas + ' (' + bov.tasa_exito + '%)</div>' +
-                        '</div>' +
-                    '</div>';
-            }
-        }
-
-        filtrarSelectorBovinos('todos');
     </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agrícola Moncopulli - Diagnóstico de Preñez</title>
+    <title>Agrícola Moncopulli - Diagnóstico de Preñez (Individual y Masivo RFID)</title>
     <style>
         :root {
             --primary: #0f4a29;
@@ -11,13 +11,13 @@
             --bg-color: #f8f9fa;
             --card-bg: #ffffff;
             --text-main: #333333;
-            --text-muted: #888888;
-            --border-color: #eaeaea;
+            --text-muted: #6c7c71;
+            --border-color: #dce8df;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
         
-                .sidebar {
+        .sidebar {
             width: 250px;
             background-color: var(--primary);
             color: white;
@@ -38,7 +38,7 @@
         .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
         .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
         
-                .main-content {
+        .main-content {
             flex-grow: 1;
             padding: 20px 40px;
             display: flex;
@@ -54,22 +54,111 @@
         .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
         .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
         
-        .content-wrapper { max-width: 600px; width: 100%; margin: 0 auto; }
-        .page-title { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .page-title h1 { font-size: 1.5rem; color: var(--text-main); font-weight: 600; }
+        .content-wrapper { max-width: 980px; width: 100%; margin: 0 auto; }
+        .page-title { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 18px; flex-wrap: wrap; }
+        .page-title h1 { font-size: 1.4rem; color: var(--primary); font-weight: 800; }
         
-        .content-card { background-color: var(--card-bg); border-radius: 8px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border-color); }
+        .content-card { background-color: var(--card-bg); border-radius: 10px; padding: 28px 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border-color); margin-bottom: 24px; }
         
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
-        .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; }
+        .mode-tabs { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+        .mode-tab-btn {
+            padding: 11px 20px;
+            border-radius: 8px;
+            border: 1.5px solid var(--primary);
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            background: #ffffff;
+            color: var(--primary);
+            transition: all 0.2s;
+        }
+        .mode-tab-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; color: #1f3d2a; }
+        .form-control { width: 100%; padding: 11px 13px; border: 1.5px solid #c5d6cb; border-radius: 7px; font-size: 0.93rem; outline: none; background: #fff; }
         .form-control:focus { border-color: var(--primary); }
 
-        .btn-submit { background-color: var(--primary); color: white; padding: 15px; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; width: 100%; margin-top: 10px; }
+        .config-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .scanner-box {
+            background: #eef6f1;
+            border: 2px dashed #8ab89a;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 18px;
+        }
+        .scanner-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .scanner-input {
+            flex: 1;
+            min-width: 240px;
+            padding: 11px 14px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: #fff;
+            outline: none;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 7px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background-color: var(--primary-light); }
+        .btn-quick {
+            background: #ffffff;
+            color: var(--primary);
+            border: 1.5px solid #b5ccb9;
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-quick:hover { background: #e3f0e7; border-color: var(--primary); }
+        .btn-danger-outline {
+            background: #fff;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-submit { background-color: var(--primary); color: white; padding: 14px; border: none; border-radius: 7px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.3s; width: 100%; margin-top: 8px; }
         .btn-submit:hover { background-color: var(--primary-light); }
 
-        .alert-danger { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-weight: 500; font-size: 0.95rem; }
-        .alert-success { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-weight: 500; font-size: 0.95rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--border-color); font-size: 0.86rem; vertical-align: middle; }
+        th { background-color: #f4f9f6; color: #4e6355; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; }
+
+        .alert-danger { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 14px 18px; border-radius: 8px; margin-bottom: 18px; font-weight: 600; font-size: 0.92rem; }
+        .alert-success { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; padding: 14px 18px; border-radius: 8px; margin-bottom: 18px; font-weight: 600; font-size: 0.92rem; }
+
+        @media (max-width: 860px) {
+            .config-grid-3 { grid-template-columns: 1fr; }
+        }
     </style>
     {% include "gestor_biologica_monco/_parcela_estilos.html" %}
 </head>
@@ -96,7 +185,7 @@
         </ul>
         <div class="logout">
             <ul class="menu-links" style="padding:0;">
-                <li><a href="/login/">Cerrar Sesión</a></li>
+                <li><a href="/login/?logout=1">Cerrar Sesión</a></li>
             </ul>
         </div>
     </nav>
@@ -104,10 +193,10 @@
     <main class="main-content" id="mainContent">
         <div class="top-bar">
             <button class="menu-toggle" onclick="toggleSidebar()">
-                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Gestión de Inseminaciones</span>
+                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Diagnóstico de Preñez y Parto (Individual / Masivo RFID)</span>
             </button>
             <div class="user-status">
-                <span class="status-dot"></span> Sincronizado | {{ user.username|default:"Administrador" }}
+                <span class="status-dot"></span> Sincronizado | {{ usuario_nombre_activo }}
             </div>
         </div>
 
@@ -115,11 +204,11 @@
 
         <div class="content-wrapper">
             <div class="page-title">
-                <h1>Registro de Diagnóstico (Preñez)</h1>
+                <h1>Registro de Diagnóstico de Preñez</h1>
+                <a href="/inseminacion/" class="btn-quick">&larr; Volver a Inseminaciones</a>
             </div>
 
             <div class="content-card">
-                
                 {% if error %}
                 <div class="alert-danger">{{ error }}</div>
                 {% endif %}
@@ -128,47 +217,149 @@
                 <div class="alert-success">{{ success }}</div>
                 {% endif %}
 
-                <form method="POST" action="/inseminacion/diagnostico/">
-                    {% csrf_token %}
-                    
-                    <div class="form-group">
-                        <label>Seleccione Inseminación / Gestación</label>
-                        <select name="inseminacion_id" class="form-control" required>
-                            <option value="">-- Seleccione un registro --</option>
-                            {% for ins in inseminaciones_pendientes %}
-                                {% with diag=ins.diagnosticogestacion_set.first %}
-                                <option value="{{ ins.id_inseminacion }}">
-                                    Registro #{{ ins.id_inseminacion }} - Vaca: {{ ins.vaca.codigo_rfid }} (Servicio: {{ ins.fecha_servicio|date:"d/m/Y" }}{% if diag %} | Preñada en curso{% else %} | Diagnóstico pendiente{% endif %})
-                                </option>
-                                {% endwith %}
-                            {% empty %}
-                                <option value="" disabled>No hay inseminaciones ni gestaciones activas pendientes</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <!-- SELECTOR DE MODO: INDIVIDUAL VS DIAGNÓSTICO MASIVO POR ESCANEO RFID -->
+                <div class="mode-tabs">
+                    <button type="button" id="btnTabIndividual" class="mode-tab-btn {% if modo_actual != 'masivo' %}active{% endif %}" onclick="cambiarModoDiagnostico('individual')">
+                        Diagnóstico Individual (1 Vaca)
+                    </button>
+                    <button type="button" id="btnTabMasivo" class="mode-tab-btn {% if modo_actual == 'masivo' %}active{% endif %}" onclick="cambiarModoDiagnostico('masivo')">
+                        Diagnóstico / Inyección Masiva por Escaneo RFID ({{ inseminaciones_pendientes|length }} pendientes)
+                    </button>
+                </div>
 
-                    <div class="form-group">
-                        <label>Resultado del Diagnóstico / Parto</label>
-                        <select name="resultado" class="form-control" required>
-                            <option value="">-- Seleccione el resultado --</option>
-                            <option value="preñada">Preñada (Positivo)</option>
-                            <option value="vacia">Vacía (Negativo)</option>
-                            <option value="mortinato">Ternero Murió en el Parto (Mortinato)</option>
-                        </select>
-                    </div>
+                <!-- MODO 1: DIAGNÓSTICO INDIVIDUAL -->
+                <div id="seccionDiagIndividual" style="display: {% if modo_actual == 'masivo' %}none{% else %}block{% endif %};">
+                    <form method="POST" action="/inseminacion/diagnostico/">
+                        {% csrf_token %}
+                        <input type="hidden" name="modo_diagnostico" value="individual">
+                        
+                        <div class="form-group">
+                            <label>Buscar o Escanear Vaca por RFID (Filtra el selector inferior)</label>
+                            <input type="text" id="inputFiltroRfidInd" class="form-control" placeholder="Escanee o escriba el código RFID de la vaca..." oninput="filtrarSelectorIndividual(this.value)">
+                        </div>
 
-                    <div class="form-group">
-                        <label>Semanas de Gestación (Opcional)</label>
-                        <input type="number" name="semanas" class="form-control" min="0" value="0">
-                    </div>
+                        <div class="form-group">
+                            <label>Seleccione Inseminación / Gestación</label>
+                            <select name="inseminacion_id" id="selectInseminacionIndividual" class="form-control" required>
+                                <option value="">-- Seleccione un registro --</option>
+                                {% for ins in inseminaciones_pendientes %}
+                                    {% with diag=ins.diagnosticogestacion_set.first %}
+                                    <option value="{{ ins.id_inseminacion }}" data-rfid="{{ ins.vaca.codigo_rfid|upper }}">
+                                        Registro #{{ ins.id_inseminacion }} - Vaca: {{ ins.vaca.codigo_rfid }} (Servicio: {{ ins.fecha_servicio|date:"d/m/Y" }}{% if diag %} | Preñada en curso{% else %} | Diagnóstico pendiente{% endif %})
+                                    </option>
+                                    {% endwith %}
+                                {% empty %}
+                                    <option value="" disabled>No hay inseminaciones ni gestaciones activas pendientes</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Fecha de Diagnóstico / Suceso</label>
-                        <input type="date" name="fecha_diagnostico" class="form-control" value="{{ fecha_hoy }}" required>
-                    </div>
+                        <div class="form-group">
+                            <label>Resultado del Diagnóstico / Parto</label>
+                            <select name="resultado" class="form-control" required>
+                                <option value="">-- Seleccione el resultado --</option>
+                                <option value="preñada">Preñada (Positivo)</option>
+                                <option value="vacia">Vacía (Negativo)</option>
+                                <option value="mortinato">Ternero Murió en el Parto (Mortinato)</option>
+                            </select>
+                        </div>
 
-                    <button type="submit" class="btn-submit">Guardar Diagnóstico</button>
-                </form>
+                        <div class="form-group">
+                            <label>Semanas de Gestación (Opcional)</label>
+                            <input type="number" name="semanas" class="form-control" min="0" value="8">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fecha de Diagnóstico / Suceso</label>
+                            <input type="date" name="fecha_diagnostico" class="form-control" value="{{ fecha_hoy }}" required>
+                        </div>
+
+                        <button type="submit" class="btn-submit">Guardar Diagnóstico Individual</button>
+                    </form>
+                </div>
+
+                <!-- MODO 2: DIAGNÓSTICO MASIVO POR ESCANEO RFID -->
+                <div id="seccionDiagMasivo" style="display: {% if modo_actual == 'masivo' %}block{% else %}none{% endif %};">
+                    <form method="POST" action="/inseminacion/diagnostico/" id="formDiagMasivo" onsubmit="return prepararEnvioDiagMasivo()">
+                        {% csrf_token %}
+                        <input type="hidden" name="modo_diagnostico" value="masivo">
+                        <input type="hidden" name="diagnosticos_masivos_json" id="inputDiagnosticosMasivosJson">
+
+                        <div class="config-grid-3">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>1. Resultado al Escanear por RFID</label>
+                                <select name="resultado" id="selectResultadoDefaultMasivo" class="form-control" onchange="aplicarResultadoATodaLaCola(this.value)">
+                                    <option value="preñada" selected>Preñada (Positivo)</option>
+                                    <option value="vacia">Vacía (Negativo)</option>
+                                    <option value="mortinato">Ternero Murió en el Parto (Mortinato)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>2. Semanas de Gestación Base</label>
+                                <input type="number" name="semanas" id="inputSemanasDefaultMasivo" class="form-control" min="0" value="8" oninput="aplicarSemanasATodaLaCola(this.value)">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>3. Fecha de Diagnóstico</label>
+                                <input type="date" name="fecha_diagnostico" class="form-control" value="{{ fecha_hoy }}" required>
+                            </div>
+                        </div>
+
+                        <!-- ESCÁNER RFID EN VIVO PARA DIAGNÓSTICO MASIVO -->
+                        <div class="scanner-box">
+                            <label for="inputScannerDiagRfid" style="display:block; font-size:0.9rem; font-weight:800; color:var(--primary); margin-bottom:8px;">
+                                Conectar Lector / Escanear RFID de Vacas Inseminadas (Escanee y presione Enter):
+                            </label>
+                            <div class="scanner-row">
+                                <input
+                                    type="text"
+                                    id="inputScannerDiagRfid"
+                                    list="datalistPendientesDiag"
+                                    class="scanner-input"
+                                    placeholder="Escanee código RFID de la vaca (ej. MONCO-VACA-0010) y presione Enter..."
+                                    autocomplete="off"
+                                >
+                                <datalist id="datalistPendientesDiag"></datalist>
+                                <button type="button" class="btn-primary" onclick="escanearVacaDiagnostico()">+ Agregar por RFID</button>
+                            </div>
+
+                            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center;">
+                                <span style="font-size:0.8rem; font-weight:700; color:#3d5645;">Escaneo masivo rápido de vacas con servicio pendiente:</span>
+                                <button type="button" class="btn-quick" onclick="cargarPendientesMasivo(5)">+ Escanear 5 Vacas</button>
+                                <button type="button" class="btn-quick" onclick="cargarPendientesMasivo(15)">+ Escanear 15 Vacas</button>
+                                <button type="button" class="btn-quick" onclick="cargarPendientesMasivo(30)">+ Escanear 30 Vacas</button>
+                                <button type="button" class="btn-danger-outline" onclick="vaciarColaDiagnostico()" style="margin-left:auto;">Vaciar Lista</button>
+                            </div>
+                            <div id="msgFeedbackDiagScanner" style="margin-top:8px; font-size:0.83rem; font-weight:700; color:#1b5e20; min-height:18px;"></div>
+                        </div>
+
+                        <div style="max-height: 360px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 18px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>RFID Vaca</th>
+                                        <th>Lote Pajuela / Servicio</th>
+                                        <th>Resultado Diagnóstico</th>
+                                        <th>Semanas</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyColaDiagnostico">
+                                    <tr>
+                                        <td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">
+                                            Escanee el código RFID de las vacas inseminadas arriba o use los botones de escaneo masivo rápido.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button type="submit" class="btn-submit">
+                            Guardar Todos los Diagnósticos Escaneados Ahora (<span id="lblTotalColaDiag">0</span> vacas)
+                        </button>
+                    </form>
+                </div>
+
             </div>
         </div>
     </main>
@@ -177,25 +368,220 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');
-            const isCollapsed = sidebar.classList.toggle('collapsed');
+            sidebar.classList.toggle('collapsed');
             mainContent.classList.toggle('expanded');
-            try {
-                localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
-            } catch (e) {}
         }
 
+        const CATALOGO_PENDIENTES = {{ catalogo_pendientes_json|safe }};
+        const MAPA_PENDIENTES_RFID = {};
+        CATALOGO_PENDIENTES.forEach(function(item) {
+            const key = item.rfid.toUpperCase();
+            if (!MAPA_PENDIENTES_RFID[key]) {
+                MAPA_PENDIENTES_RFID[key] = item;
+            }
+        });
+
         (function() {
-            try {
-                if (localStorage.getItem('sidebar_collapsed') === 'true') {
-                    const sidebar = document.getElementById('sidebar');
-                    const mainContent = document.getElementById('mainContent');
-                    if (sidebar && mainContent) {
-                        sidebar.classList.add('collapsed');
-                        mainContent.classList.add('expanded');
-                    }
-                }
-            } catch (e) {}
+            const dl = document.getElementById('datalistPendientesDiag');
+            if (!dl) return;
+            CATALOGO_PENDIENTES.slice(0, 400).forEach(function(item) {
+                const opt = document.createElement('option');
+                opt.value = item.rfid;
+                opt.label = 'Lote: ' + item.lote_pajuela + ' | Serv: ' + item.fecha_servicio;
+                dl.appendChild(opt);
+            });
         })();
+
+        function cambiarModoDiagnostico(modo) {
+            const esMasivo = modo === 'masivo';
+            document.getElementById('seccionDiagIndividual').style.display = esMasivo ? 'none' : 'block';
+            document.getElementById('seccionDiagMasivo').style.display = esMasivo ? 'block' : 'none';
+            document.getElementById('btnTabIndividual').classList.toggle('active', !esMasivo);
+            document.getElementById('btnTabMasivo').classList.toggle('active', esMasivo);
+            if (esMasivo) {
+                document.getElementById('inputScannerDiagRfid').focus();
+            }
+        }
+
+        function filtrarSelectorIndividual(texto) {
+            const q = (texto || '').trim().toUpperCase();
+            const sel = document.getElementById('selectInseminacionIndividual');
+            let primeraCoincidencia = null;
+            Array.from(sel.options).forEach(function(opt) {
+                if (!opt.value) return;
+                const rfid = opt.getAttribute('data-rfid') || '';
+                const visible = !q || rfid.indexOf(q) !== -1 || opt.textContent.toUpperCase().indexOf(q) !== -1;
+                opt.style.display = visible ? '' : 'none';
+                if (visible && !primeraCoincidencia) {
+                    primeraCoincidencia = opt.value;
+                }
+            });
+            if (q && primeraCoincidencia) {
+                sel.value = primeraCoincidencia;
+            }
+        }
+
+        let colaDiagnostico = [];
+
+        const inputScanDiag = document.getElementById('inputScannerDiagRfid');
+        if (inputScanDiag) {
+            inputScanDiag.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    escanearVacaDiagnostico();
+                }
+            });
+        }
+
+        function mostrarFeedbackDiag(msg, esError) {
+            const el = document.getElementById('msgFeedbackDiagScanner');
+            el.textContent = msg;
+            el.style.color = esError ? '#c62828' : '#1b5e20';
+        }
+
+        function escanearVacaDiagnostico() {
+            const raw = (inputScanDiag.value || '').trim().toUpperCase();
+            if (!raw) return;
+
+            const resultadoDef = document.getElementById('selectResultadoDefaultMasivo').value;
+            const semanasDef = parseInt(document.getElementById('inputSemanasDefaultMasivo').value || '8', 10);
+
+            const codigos = raw.split(/[\s,;]+/).filter(Boolean);
+            let agregadas = 0;
+
+            codigos.forEach(function(code) {
+                if (colaDiagnostico.some(function(x) { return x.rfid === code; })) {
+                    mostrarFeedbackDiag('La vaca ' + code + ' ya está en la tabla de diagnóstico.', true);
+                    return;
+                }
+                const info = MAPA_PENDIENTES_RFID[code];
+                if (!info) {
+                    mostrarFeedbackDiag('El RFID ' + code + ' no tiene una inseminación pendiente de diagnóstico.', true);
+                    return;
+                }
+                colaDiagnostico.push({
+                    inseminacion_id: info.inseminacion_id,
+                    rfid: info.rfid,
+                    lote_pajuela: info.lote_pajuela,
+                    fecha_servicio: info.fecha_servicio,
+                    resultado: resultadoDef,
+                    semanas: resultadoDef === 'vacia' ? 0 : semanasDef
+                });
+                agregadas++;
+            });
+
+            if (agregadas > 0) {
+                mostrarFeedbackDiag('Se agregó ' + agregadas + ' vaca(s) por RFID al lote de diagnóstico.', false);
+            }
+            inputScanDiag.value = '';
+            inputScanDiag.focus();
+            renderizarColaDiagnostico();
+        }
+
+        function cargarPendientesMasivo(cantidad) {
+            const usados = new Set(colaDiagnostico.map(function(x) { return x.rfid; }));
+            const disponibles = CATALOGO_PENDIENTES.filter(function(x) { return !usados.has(x.rfid); });
+            if (disponibles.length === 0) {
+                mostrarFeedbackDiag('Ya se agregaron todas las vacas con diagnóstico pendiente.', true);
+                return;
+            }
+            const resultadoDef = document.getElementById('selectResultadoDefaultMasivo').value;
+            const semanasDef = parseInt(document.getElementById('inputSemanasDefaultMasivo').value || '8', 10);
+
+            const lote = disponibles.slice(0, cantidad);
+            lote.forEach(function(info) {
+                if (!colaDiagnostico.some(function(x) { return x.rfid === info.rfid; })) {
+                    colaDiagnostico.push({
+                        inseminacion_id: info.inseminacion_id,
+                        rfid: info.rfid,
+                        lote_pajuela: info.lote_pajuela,
+                        fecha_servicio: info.fecha_servicio,
+                        resultado: resultadoDef,
+                        semanas: resultadoDef === 'vacia' ? 0 : semanasDef
+                    });
+                }
+            });
+            mostrarFeedbackDiag('Se escanearon ' + lote.length + ' vacas con servicio pendiente.', false);
+            renderizarColaDiagnostico();
+        }
+
+        function aplicarResultadoATodaLaCola(nuevoRes) {
+            colaDiagnostico.forEach(function(item) {
+                item.resultado = nuevoRes;
+                if (nuevoRes === 'vacia') item.semanas = 0;
+            });
+            renderizarColaDiagnostico();
+        }
+
+        function aplicarSemanasATodaLaCola(nuevasSem) {
+            const s = parseInt(nuevasSem || '0', 10);
+            colaDiagnostico.forEach(function(item) {
+                if (item.resultado !== 'vacia') item.semanas = s;
+            });
+            renderizarColaDiagnostico();
+        }
+
+        function cambiarResultadoFila(idx, val) {
+            if (!colaDiagnostico[idx]) return;
+            colaDiagnostico[idx].resultado = val;
+            if (val === 'vacia') colaDiagnostico[idx].semanas = 0;
+            renderizarColaDiagnostico();
+        }
+
+        function cambiarSemanasFila(idx, val) {
+            if (!colaDiagnostico[idx]) return;
+            colaDiagnostico[idx].semanas = parseInt(val || '0', 10);
+        }
+
+        function quitarFilaDiagnostico(idx) {
+            colaDiagnostico.splice(idx, 1);
+            renderizarColaDiagnostico();
+        }
+
+        function vaciarColaDiagnostico() {
+            colaDiagnostico = [];
+            renderizarColaDiagnostico();
+        }
+
+        function renderizarColaDiagnostico() {
+            const tbody = document.getElementById('tbodyColaDiagnostico');
+            document.getElementById('lblTotalColaDiag').textContent = colaDiagnostico.length;
+
+            if (colaDiagnostico.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Escanee el código RFID de las vacas inseminadas arriba o use los botones de escaneo masivo rápido.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            colaDiagnostico.forEach(function(item, idx) {
+                html += '<tr>' +
+                    '<td>' + (idx + 1) + '</td>' +
+                    '<td><strong>' + item.rfid + '</strong></td>' +
+                    '<td>' + item.lote_pajuela + ' <span style="color:#6c7c71;font-size:0.8rem;">(' + item.fecha_servicio + ')</span></td>' +
+                    '<td>' +
+                        '<select class="form-control" style="padding:6px 10px;font-size:0.84rem;" onchange="cambiarResultadoFila(' + idx + ', this.value)">' +
+                            '<option value="preñada"' + (item.resultado === 'preñada' ? ' selected' : '') + '>Preñada (Positivo)</option>' +
+                            '<option value="vacia"' + (item.resultado === 'vacia' ? ' selected' : '') + '>Vacía (Negativo)</option>' +
+                            '<option value="mortinato"' + (item.resultado === 'mortinato' ? ' selected' : '') + '>Ternero Murió en el Parto</option>' +
+                        '</select>' +
+                    '</td>' +
+                    '<td>' +
+                        '<input type="number" class="form-control" style="width:80px;padding:6px 8px;font-size:0.84rem;" min="0" value="' + item.semanas + '" oninput="cambiarSemanasFila(' + idx + ', this.value)">' +
+                    '</td>' +
+                    '<td><button type="button" class="btn-danger-outline" onclick="quitarFilaDiagnostico(' + idx + ')">Quitar</button></td>' +
+                '</tr>';
+            });
+            tbody.innerHTML = html;
+        }
+
+        function prepararEnvioDiagMasivo() {
+            if (colaDiagnostico.length === 0) {
+                mostrarFeedbackDiag('Debe escanear al menos una vaca antes de guardar el diagnóstico masivo.', true);
+                return false;
+            }
+            document.getElementById('inputDiagnosticosMasivosJson').value = JSON.stringify(colaDiagnostico);
+            return true;
+        }
     </script>
 </body>
 </html>

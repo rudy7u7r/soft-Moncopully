@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrícola Moncopulli - Inyección Masiva por RFID</title>
+    <style>
+        :root {
+            --primary: #0f4a29;
+            --primary-light: #1a6b3d;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #6e7e73;
+            --border-color: #dce8df;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
+
+        .sidebar { width: 250px; background-color: var(--primary); color: white; display: flex; flex-direction: column; transition: transform 0.3s ease; position: fixed; height: 100%; z-index: 1000; transform: translateX(0); }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 1.2rem; font-weight: 600; letter-spacing: 0.5px; }
+        .menu-links { list-style: none; padding: 0 15px; flex-grow: 1; }
+        .menu-links li { margin-bottom: 10px; }
+        .menu-links a { color: white; text-decoration: none; display: block; padding: 12px 15px; border-radius: 6px; font-size: 0.95rem; transition: background 0.2s; }
+        .menu-links a:hover, .menu-links a.active { background-color: var(--primary-light); }
+        .logout { padding: 15px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
+
+        .main-content { flex-grow: 1; padding: 20px 40px; display: flex; flex-direction: column; overflow-y: auto; margin-left: 250px; transition: margin-left 0.3s ease; }
+        .main-content.expanded { margin-left: 0; }
+
+        .menu-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary); display: flex; align-items: center; gap: 15px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .user-status { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
+        .status-dot { width: 8px; height: 8px; background-color: #2e7d32; border-radius: 50%; display: inline-block; }
+
+        .content-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 26px 30px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .page-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-title h1 { font-size: 1.35rem; color: var(--primary); font-weight: 800; }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1f3d2a;
+            margin-bottom: 6px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1.5px solid #c5d6cb;
+            border-radius: 7px;
+            font-size: 0.92rem;
+            outline: none;
+            background: #fff;
+        }
+        .form-control:focus { border-color: var(--primary); }
+
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .kpi-mini {
+            background: #f4f9f6;
+            border: 1px solid #cfe0d4;
+            border-radius: 8px;
+            padding: 14px 18px;
+        }
+        .kpi-mini .lbl { font-size: 0.76rem; text-transform: uppercase; color: #5a6f61; font-weight: 700; margin-bottom: 4px; }
+        .kpi-mini .val { font-size: 1.45rem; font-weight: 800; color: var(--primary); }
+        .kpi-mini .sub { font-size: 0.78rem; color: #687c6e; margin-top: 2px; }
+
+        .scanner-box {
+            background: #eef6f1;
+            border: 2px dashed #8ab89a;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 20px;
+        }
+        .scanner-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .scanner-input {
+            flex: 1;
+            min-width: 260px;
+            padding: 12px 15px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            outline: none;
+            background: #ffffff;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 7px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary:hover { background-color: var(--primary-light); }
+        .btn-quick {
+            background: #ffffff;
+            color: var(--primary);
+            border: 1.5px solid #b5ccb9;
+            padding: 8px 13px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-quick:hover { background: #e3f0e7; border-color: var(--primary); }
+        .btn-danger-outline {
+            background: #fff;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            padding: 6px 11px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border-color); font-size: 0.88rem; }
+        th { background-color: #f4f9f6; color: #4e6355; font-weight: 700; text-transform: uppercase; font-size: 0.76rem; }
+
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
+        .badge-pajuela { background: #e6f2eb; color: #0f4a29; border: 1px solid #b8d8c3; }
+        .alert-danger { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 14px 18px; border-radius: 8px; margin-bottom: 18px; font-weight: 600; font-size: 0.9rem; }
+        .alert-success { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 0.92rem; }
+
+        @media (max-width: 960px) {
+            .config-grid, .kpi-strip { grid-template-columns: 1fr; }
+        }
+    </style>
+    {% include "gestor_biologica_monco/_parcela_estilos.html" %}
+</head>
+<body>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-logo"><img src="/static/gestor_biologica_monco/img/logo_moncopulli.jpg" alt="Logo Agrícola Moncopulli"></div>
+            <h2>Agrícola Moncopulli</h2>
+            <span class="brand-sub">Parcela &amp; Ganadería</span>
+        </div>
+        <ul class="menu-links">
+            <li><a href="/inicio/">Panel General</a></li>
+            <li><a href="/rendimiento/">Ficha y Rendimiento</a></li>
+            <li>
+                <a href="/inseminacion/" class="active">Inseminación</a>
+                <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
+                    <li><a href="/inseminacion/diagnostico/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Diagnóstico de Preñez</a></li>
+                </ul>
+            </li>
+            <li><a href="/linaje/">Linaje Sanguíneo</a></li>
+            <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
+            <li><a href="/informes/">Informes</a></li>
+        </ul>
+        <div class="logout">
+            <ul class="menu-links" style="padding:0;">
+                <li><a href="/login/?logout=1">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        <div class="top-bar">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                &#9776; <span style="font-size: 1.2rem; font-weight: 600; color: #333; margin-left: 10px;">Inyección Masiva de Vacas por Escaneo RFID</span>
+            </button>
+            <div class="user-status">
+                <span class="status-dot"></span> Sincronizado | {{ usuario_nombre_activo }}
+            </div>
+        </div>
+
+        {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
+
+        {% if error %}
+            <div class="alert-danger">{{ error }}</div>
+        {% endif %}
+
+        {% if reporte %}
+        <div class="alert-success">
+            <div style="font-size: 1.05rem; font-weight: 800; margin-bottom: 6px;">
+                Inyección Masiva Completada — Lote de Pajuela {{ reporte.lote_pajuela }}
+            </div>
+            <div>
+                Se inyectaron <strong>{{ reporte.total_inyectadas }} vacas</strong> exitosamente
+                (rendimiento configurado: <strong>1 pajuela cada {{ reporte.vacas_por_pajuela }} vacas</strong>) y se descontaron
+                <strong>{{ reporte.pajuelas_descontadas }} pajuela(s)</strong> del inventario (Stock restante: <strong>{{ reporte.stock_restante }}</strong>).
+            </div>
+            {% if reporte.rechazadas %}
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #81c784; color: #b71c1c;">
+                <strong>Vacas bloqueadas / omitidas ({{ reporte.total_rechazadas }}):</strong>
+                <ul style="margin-top: 4px; padding-left: 20px;">
+                    {% for r in reporte.rechazadas %}
+                        <li><strong>{{ r.rfid }}</strong>: {{ r.motivo }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="content-card">
+            <div class="page-title">
+                <div>
+                    <h1>Inyección Masiva de Vacas por Escaneo RFID</h1>
+                    <p style="font-size: 0.86rem; color: var(--text-muted); margin-top: 3px;">
+                        Seleccione la pajuela, defina cuántas vacas rinde cada pajuela (ej. 1 pajuela = 3 vacas) y escanee los códigos RFID de todas las vacas a inyectar.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="/inseminacion/" class="btn-quick">&larr; Volver a Inseminaciones</a>
+                    <a href="/inseminacion/nueva/" class="btn-quick">Registro Individual</a>
+                </div>
+            </div>
+
+            <form method="POST" action="/inseminacion/masiva/" id="formInyeccionMasiva" onsubmit="return validarEnvioMasivo()">
+                {% csrf_token %}
+                <input type="hidden" name="rfids_escaneados" id="inputHiddenRfids">
+
+                <div class="config-grid">
+                    <div class="form-group">
+                        <label for="selectPajuelaMasiva">1. Seleccione Lote de Pajuela de Semen</label>
+                        <select name="pajuela_id" id="selectPajuelaMasiva" class="form-control" required onchange="actualizarCalculoDosis()">
+                            <option value="">-- Seleccione un lote con stock disponible --</option>
+                            {% for p in pajuelas %}
+                                <option value="{{ p.id_pajuela }}" data-stock="{{ p.stock }}" data-lote="{{ p.lote_pajuela }}">
+                                    {{ p.lote_pajuela }} — Stock: {{ p.stock }} pajuelas ({% if p.toro %}Toro Local: {{ p.toro.codigo_rfid }} - {{ p.toro.raza.nombre_raza }}{% else %}Importado: {{ p.codigo_toro_externo }}{% endif %})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inputVacasPorPajuela">2. Vacas por cada 1 Pajuela</label>
+                        <input type="number" name="vacas_por_pajuela" id="inputVacasPorPajuela" class="form-control" value="3" min="1" max="20" required oninput="actualizarCalculoDosis()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inputFechaServicio">3. Fecha de Inyección / Servicio</label>
+                        <input type="date" name="fecha_servicio" id="inputFechaServicio" class="form-control" value="{{ fecha_hoy }}" required>
+                    </div>
+                </div>
+
+                <div class="kpi-strip">
+                    <div class="kpi-mini">
+                        <div class="lbl">Vacas Escaneadas en Cola</div>
+                        <div class="val" id="kpiTotalVacas">0 vacas</div>
+                        <div class="sub">Disponibles en predio: {{ total_vacas_disponibles }} hembras</div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div class="lbl">Pajuelas que se Descontarán</div>
+                        <div class="val" id="kpiPajuelasUsar">0 pajuelas</div>
+                        <div class="sub" id="kpiSubRendimiento">Rendimiento: 1 pajuela sirve para 3 vacas</div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div class="lbl">Stock del Lote Seleccionado</div>
+                        <div class="val" id="kpiStockDisponible">-</div>
+                        <div class="sub" id="kpiEstadoStock">Seleccione un lote de pajuela arriba</div>
+                    </div>
+                </div>
+
+                <!-- ESCÁNER RFID EN TIEMPO REAL -->
+                <div class="scanner-box">
+                    <label for="inputScannerRfid" style="display:block; font-size:0.9rem; font-weight:800; color:var(--primary); margin-bottom:8px;">
+                        Lector / Escáner RFID de Vacas (Escanee o escriba el RFID y presione Enter):
+                    </label>
+                    <div class="scanner-row">
+                        <input
+                            type="text"
+                            id="inputScannerRfid"
+                            list="datalistVacasDisponibles"
+                            class="scanner-input"
+                            placeholder="Escanee RFID aquí (ej. MONCO-VACA-0001) y presione Enter..."
+                            autocomplete="off"
+                        >
+                        <datalist id="datalistVacasDisponibles"></datalist>
+                        <button type="button" class="btn-primary" onclick="escanearDesdeInput()">+ Agregar Vaca RFID</button>
+                    </div>
+
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center;">
+                        <span style="font-size:0.8rem; font-weight:700; color:#3d5645;">Carga rápida por lote de escaneo:</span>
+                        <button type="button" class="btn-quick" onclick="cargarVacasAleatorias(3)">+ Escanear 3 Vacas (1 Pajuela)</button>
+                        <button type="button" class="btn-quick" onclick="cargarVacasAleatorias(9)">+ Escanear 9 Vacas (3 Pajuelas)</button>
+                        <button type="button" class="btn-quick" onclick="cargarVacasAleatorias(15)">+ Escanear 15 Vacas (5 Pajuelas)</button>
+                        <button type="button" class="btn-quick" onclick="cargarVacasAleatorias(30)">+ Escanear 30 Vacas (10 Pajuelas)</button>
+                        <button type="button" class="btn-danger-outline" onclick="limpiarColaVacas()" style="margin-left:auto;">Vaciar Lista</button>
+                    </div>
+                    <div id="msgScannerFeedback" style="margin-top:8px; font-size:0.83rem; font-weight:700; color:#1b5e20; min-height:18px;"></div>
+                </div>
+
+                <!-- TABLA DE COLA DE INYECCIÓN -->
+                <div style="max-height: 360px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Código RFID Vaca</th>
+                                <th>Raza</th>
+                                <th>Estado Actual</th>
+                                <th>Pajuela Asignada en el Lote</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyColaVacas">
+                            <tr>
+                                <td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">
+                                    Aún no hay vacas en la cola de inyección. Escanee un código RFID arriba o use los botones de carga rápida.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn-primary" style="padding: 14px 28px; font-size: 1rem;">
+                        Inyectar Todas las Vacas Escaneadas Ahora
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+        }
+
+        const CATALOGO_VACAS = {{ catalogo_vacas_json|safe }};
+        const MAPA_RFID = {};
+        CATALOGO_VACAS.forEach(function(v) {
+            MAPA_RFID[v.rfid.toUpperCase()] = v;
+        });
+
+        // Poblar sugerencias del datalist (primeras 400 para fluidez del navegador)
+        (function() {
+            const dl = document.getElementById('datalistVacasDisponibles');
+            CATALOGO_VACAS.slice(0, 400).forEach(function(v) {
+                const opt = document.createElement('option');
+                opt.value = v.rfid;
+                opt.label = v.raza + ' (' + v.estado + ')';
+                dl.appendChild(opt);
+            });
+        })();
+
+        let colaVacas = [];
+
+        const inputScanner = document.getElementById('inputScannerRfid');
+        inputScanner.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                escanearDesdeInput();
+            }
+        });
+
+        function mostrarFeedbackScanner(texto, esError) {
+            const el = document.getElementById('msgScannerFeedback');
+            el.textContent = texto;
+            el.style.color = esError ? '#c62828' : '#1b5e20';
+        }
+
+        function escanearDesdeInput() {
+            const raw = (inputScanner.value || '').trim().toUpperCase();
+            if (!raw) return;
+
+            // Permite pegar varios códigos separados por coma o espacio
+            const codigos = raw.split(/[\s,;]+/).filter(Boolean);
+            let agregadas = 0;
+            codigos.forEach(function(code) {
+                const yaExiste = colaVacas.some(function(item) { return item.rfid === code; });
+                if (yaExiste) {
+                    mostrarFeedbackScanner('La vaca ' + code + ' ya está en la lista de inyección.', true);
+                    return;
+                }
+                const info = MAPA_RFID[code];
+                if (info) {
+                    colaVacas.push(info);
+                    agregadas++;
+                } else {
+                    colaVacas.push({
+                        rfid: code,
+                        raza: 'Verificar en BD',
+                        estado: 'Escaneado Manual'
+                    });
+                    agregadas++;
+                }
+            });
+
+            if (agregadas > 0) {
+                mostrarFeedbackScanner('Se agregó ' + agregadas + ' vaca(s) a la cola de inyección.', false);
+            }
+            inputScanner.value = '';
+            inputScanner.focus();
+            renderizarCola();
+        }
+
+        function cargarVacasAleatorias(cantidad) {
+            const usados = new Set(colaVacas.map(function(v) { return v.rfid; }));
+            const disponibles = CATALOGO_VACAS.filter(function(v) { return !usados.has(v.rfid); });
+            if (disponibles.length === 0) {
+                mostrarFeedbackScanner('Ya están todas las vacas disponibles en la lista.', true);
+                return;
+            }
+            // Mezclar aleatoriamente para simular escaneo de lote en manga
+            for (let i = disponibles.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const temp = disponibles[i];
+                disponibles[i] = disponibles[j];
+                disponibles[j] = temp;
+            }
+            const seleccion = disponibles.slice(0, cantidad);
+            seleccion.forEach(function(v) { colaVacas.push(v); });
+            mostrarFeedbackScanner('Se escanearon y cargaron ' + seleccion.length + ' vacas disponibles a la cola.', false);
+            renderizarCola();
+        }
+
+        function quitarVacaDeCola(idx) {
+            colaVacas.splice(idx, 1);
+            renderizarCola();
+        }
+
+        function limpiarColaVacas() {
+            colaVacas = [];
+            mostrarFeedbackScanner('Cola de inyección vaciada.', false);
+            renderizarCola();
+        }
+
+        function actualizarCalculoDosis() {
+            renderizarCola();
+        }
+
+        function renderizarCola() {
+            const tbody = document.getElementById('tbodyColaVacas');
+            const vacasPorPajuela = Math.max(1, parseInt(document.getElementById('inputVacasPorPajuela').value || '3', 10));
+            const pajuelasRequeridas = colaVacas.length > 0 ? Math.ceil(colaVacas.length / vacasPorPajuela) : 0;
+
+            document.getElementById('kpiTotalVacas').textContent = colaVacas.length + ' vaca(s)';
+            document.getElementById('kpiPajuelasUsar').textContent = pajuelasRequeridas + ' pajuela(s)';
+            document.getElementById('kpiSubRendimiento').textContent = 'Rendimiento: 1 pajuela sirve para ' + vacasPorPajuela + ' vaca(s)';
+
+            const selPaj = document.getElementById('selectPajuelaMasiva');
+            const optSel = selPaj.options[selPaj.selectedIndex];
+            if (optSel && optSel.value) {
+                const stockDisp = parseInt(optSel.getAttribute('data-stock') || '0', 10);
+                document.getElementById('kpiStockDisponible').textContent = stockDisp + ' disponibles';
+                if (pajuelasRequeridas > stockDisp) {
+                    document.getElementById('kpiEstadoStock').textContent = 'Stock insuficiente para ' + colaVacas.length + ' vacas';
+                    document.getElementById('kpiEstadoStock').style.color = '#c62828';
+                } else {
+                    document.getElementById('kpiEstadoStock').textContent = 'Quedarán ' + (stockDisp - pajuelasRequeridas) + ' pajuelas tras inyectar';
+                    document.getElementById('kpiEstadoStock').style.color = '#1b5e20';
+                }
+            } else {
+                document.getElementById('kpiStockDisponible').textContent = '-';
+                document.getElementById('kpiEstadoStock').textContent = 'Seleccione un lote de pajuela arriba';
+                document.getElementById('kpiEstadoStock').style.color = '#687c6e';
+            }
+
+            document.getElementById('inputHiddenRfids').value = colaVacas.map(function(v) { return v.rfid; }).join('\n');
+
+            if (colaVacas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Aún no hay vacas en la cola de inyección. Escanee un código RFID arriba o use los botones de carga rápida.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            colaVacas.forEach(function(v, idx) {
+                const numPajuela = Math.floor(idx / vacasPorPajuela) + 1;
+                const subDosis = (idx % vacasPorPajuela) + 1;
+                html += '<tr>' +
+                    '<td>' + (idx + 1) + '</td>' +
+                    '<td><strong>' + v.rfid + '</strong></td>' +
+                    '<td>' + v.raza + '</td>' +
+                    '<td>' + v.estado + '</td>' +
+                    '<td><span class="badge badge-pajuela">Pajuela #' + numPajuela + ' (Vaca ' + subDosis + '/' + vacasPorPajuela + ')</span></td>' +
+                    '<td><button type="button" class="btn-danger-outline" onclick="quitarVacaDeCola(' + idx + ')">Quitar</button></td>' +
+                '</tr>';
+            });
+            tbody.innerHTML = html;
+        }
+
+        function validarEnvioMasivo() {
+            if (colaVacas.length === 0) {
+                mostrarFeedbackScanner('Debe escanear o agregar al menos una vaca antes de inyectar.', true);
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

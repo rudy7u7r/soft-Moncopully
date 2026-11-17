@@ -295,6 +295,51 @@
             <div class="alert-danger">{{ mensaje_error }}</div>
         {% endif %}
 
+        {% if panel_bloqueado %}
+        <!-- BLOQUEO DE SEGURIDAD CON CONTRASEÑA PARA ROLES Y PERMISOS -->
+        <div class="content-card" style="max-width: 540px; margin: 18px auto 30px auto; text-align: center; padding: 34px 32px; border: 1.5px solid #bfd4c5; box-shadow: 0 12px 30px rgba(15, 74, 41, 0.08);">
+            <div style="display: inline-block; background: #e6f2eb; color: #0f4a29; padding: 6px 14px; border-radius: 20px; font-size: 0.76rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+                Zona Protegida de Administración
+            </div>
+            <h1 style="font-size: 1.35rem; color: var(--primary); font-weight: 800; margin-bottom: 18px;">
+                Confirmar Contraseña de Administrador
+            </h1>
+
+            <div style="background: #f4f9f6; border: 1px solid #cfe0d4; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; text-align: left; font-size: 0.88rem;">
+                <div><strong>Administrador Activo:</strong> {{ usuario_nombre_activo }}</div>
+                <div style="margin-top: 4px; color: #4d6355;"><strong>RUT:</strong> {{ usuario_rut_activo }}</div>
+            </div>
+
+            <form method="POST" action="/usuarios/" style="text-align: left;">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="desbloquear_panel">
+                <div style="margin-bottom: 16px;">
+                    <label for="inputPasswordAdminUnlock" style="display: block; font-size: 0.85rem; font-weight: 700; color: #1f3d2a; margin-bottom: 6px;">
+                        Contraseña del Administrador
+                    </label>
+                    <input
+                        type="password"
+                        id="inputPasswordAdminUnlock"
+                        name="password_admin"
+                        class="form-control"
+                        placeholder="Ingrese su contraseña para desbloquear..."
+                        required
+                        autofocus
+                    >
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; padding: 12px;">
+                    Desbloquear Roles y Permisos
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #eef6f1; border: 1px solid #c5dccd; padding: 10px 18px; border-radius: 8px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+            <span style="font-size: 0.85rem; color: #1b432a; font-weight: 600;">
+                Panel desbloqueado temporalmente. Se bloqueará de forma automática al cambiar de módulo o tras 2 minutos de inactividad.
+            </span>
+            <a href="/usuarios/?lock=1" class="btn-action" style="background: #ffffff; font-weight: 700;">Bloquear Panel Ahora</a>
+        </div>
+
         <!-- SECCIÓN 1: SOLICITUDES PENDIENTES DE PERMISOS -->
         <div class="content-card">
             <div class="page-title">
@@ -470,6 +515,7 @@
                 </table>
             </div>
         </div>
+        {% endif %}
     </main>
 
     <!-- MODAL PARA MODIFICAR ROL Y PERMISOS -->
@@ -614,6 +660,23 @@
         function cerrarModalPermisos() {
             document.getElementById('modalPermisos').classList.remove('active');
         }
+
+        {% if not panel_bloqueado %}
+        // Bloqueo automático por inactividad (2 minutos sin actividad en Roles y Permisos)
+        (function() {
+            let timerInactividad;
+            function reiniciarTimer() {
+                clearTimeout(timerInactividad);
+                timerInactividad = setTimeout(function() {
+                    window.location.href = '/usuarios/?lock=1';
+                }, 120000);
+            }
+            ['mousemove', 'keydown', 'click', 'scroll'].forEach(function(evt) {
+                window.addEventListener(evt, reiniciarTimer, { passive: true });
+            });
+            reiniciarTimer();
+        })();
+        {% endif %}
     </script>
 </body>
 </html>

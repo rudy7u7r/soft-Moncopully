@@ -128,6 +128,25 @@
             mainMenuList.appendChild(liUsuarios);
         }
 
+        // Mostrar "Diagnóstico de Preñez" en el menú lateral únicamente cuando esté seleccionada la sección Inseminación
+        const enSeccionInseminacion = window.location.pathname.indexOf('/inseminacion') === 0;
+        document.querySelectorAll('.sidebar .menu-links a[href="/inseminacion/diagnostico/"]').forEach(function(diagLink) {
+            const subUl = diagLink.closest('ul');
+            const subLi = diagLink.closest('li');
+            if (!enSeccionInseminacion) {
+                if (subUl && !subUl.classList.contains('menu-links')) {
+                    subUl.style.display = 'none';
+                } else if (subLi) {
+                    subLi.style.display = 'none';
+                }
+            }
+        });
+
+        // Asegurar que el botón "Cerrar Sesión" siempre cierre la sesión activa y envíe al Login
+        document.querySelectorAll('.sidebar .logout a').forEach(function(logoutLink) {
+            logoutLink.setAttribute('href', '/login/?logout=1');
+        });
+
         // Filtrar enlaces del menú lateral según permisos del usuario en la base de datos
         const sidebarLinks = document.querySelectorAll('.sidebar .menu-links a');
         sidebarLinks.forEach(function(link) {
@@ -167,6 +186,142 @@
         if (formNuevoBovino && !puedeBovinoNuevo) {
             const cardContenedor = formNuevoBovino.closest('.panel-card');
             if (cardContenedor) cardContenedor.style.display = 'none';
+        }
+
+        // Sistema Universal de Paginación por Páginas (1, 2, 3, 4...) para todas las tablas de datos
+        const paginadoresActivos = [];
+
+        function construirRangoPaginas(actual, total) {
+            if (total <= 7) {
+                const arr = [];
+                for (let i = 1; i <= total; i++) arr.push(i);
+                return arr;
+            }
+            const paginas = [1];
+            if (actual > 3) paginas.push('...');
+            const inicio = Math.max(2, actual - 1);
+            const fin = Math.min(total - 1, actual + 1);
+            for (let i = inicio; i <= fin; i++) paginas.push(i);
+            if (actual < total - 2) paginas.push('...');
+            paginas.push(total);
+            return paginas;
+        }
+
+        function inicializarPaginacionTablas() {
+            const tablas = document.querySelectorAll('.main-content table');
+            tablas.forEach(function(tabla, idx) {
+                if (tabla.getAttribute('data-paginada') === '1') return;
+                const tbody = tabla.querySelector('tbody');
+                if (!tbody || tbody.id === 'tbodyColaVacas' || tbody.id === 'tbodyColaDiagnostico') return;
+
+                const todasFilas = Array.from(tbody.querySelectorAll('tr')).filter(function(tr) {
+                    return !tr.querySelector('td[colspan]');
+                });
+                if (todasFilas.length <= 12) return;
+
+                tabla.setAttribute('data-paginada', '1');
+                const estado = {
+                    tabla: tabla,
+                    tbody: tbody,
+                    todasFilas: todasFilas,
+                    paginaActual: 1,
+                    tamanoPagina: 15,
+                    barra: document.createElement('div')
+                };
+                estado.barra.className = 'monco-pagination-bar';
+
+                const contenedorTabla = tabla.closest('.table-container') || tabla.parentElement;
+                contenedorTabla.parentNode.insertBefore(estado.barra, contenedorTabla.nextSibling);
+
+                estado.render = function(resetearPagina) {
+                    if (resetearPagina) estado.paginaActual = 1;
+                    const filasVisibles = estado.todasFilas.filter(function(tr) {
+                        return tr.getAttribute('data-filtered-out') !== '1';
+                    });
+                    const totalRegistros = filasVisibles.length;
+                    const totalPaginas = Math.max(1, Math.ceil(totalRegistros / estado.tamanoPagina));
+                    if (estado.paginaActual > totalPaginas) estado.paginaActual = totalPaginas;
+
+                    const inicioIdx = (estado.paginaActual - 1) * estado.tamanoPagina;
+                    const finIdx = inicioIdx + estado.tamanoPagina;
+
+                    estado.todasFilas.forEach(function(tr) {
+                        tr.style.display = 'none';
+                    });
+                    filasVisibles.slice(inicioIdx, finIdx).forEach(function(tr) {
+                        tr.style.display = '';
+                    });
+
+                    const desde = totalRegistros === 0 ? 0 : inicioIdx + 1;
+                    const hasta = Math.min(finIdx, totalRegistros);
+
+                    let html = '<div class="monco-pagination-info">' +
+                        '<span>Mostrando <strong>' + desde + '–' + hasta + '</strong> de <strong>' + totalRegistros + '</strong> registros</span>' +
+                        '<label style="display:inline-flex;align-items:center;gap:6px;">Mostrar ' +
+                        '<select class="monco-page-size-select">' +
+                            '<option value="10"' + (estado.tamanoPagina === 10 ? ' selected' : '') + '>10</option>' +
+                            '<option value="15"' + (estado.tamanoPagina === 15 ? ' selected' : '') + '>15</option>' +
+                            '<option value="25"' + (estado.tamanoPagina === 25 ? ' selected' : '') + '>25</option>' +
+                            '<option value="50"' + (estado.tamanoPagina === 50 ? ' selected' : '') + '>50</option>' +
+                        '</select> por página</label>' +
+                    '</div>';
+
+                    html += '<div class="monco-pagination-controls">';
+                    html += '<button type="button" class="monco-page-btn" data-page="prev"' + (estado.paginaActual <= 1 ? ' disabled' : '') + '>&laquo; Anterior</button>';
+
+                    const rango = construirRangoPaginas(estado.paginaActual, totalPaginas);
+                    rango.forEach(function(item) {
+                        if (item === '...') {
+                            html += '<span class="monco-page-dots">...</span>';
+                        } else {
+                            const activeCls = item === estado.paginaActual ? ' active' : '';
+                            html += '<button type="button" class="monco-page-btn' + activeCls + '" data-page="' + item + '">' + item + '</button>';
+                        }
+                    });
+
+                    html += '<button type="button" class="monco-page-btn" data-page="next"' + (estado.paginaActual >= totalPaginas ? ' disabled' : '') + '>Siguiente &raquo;</button>';
+                    html += '</div>';
+
+                    estado.barra.innerHTML = html;
+
+                    const selTam = estado.barra.querySelector('.monco-page-size-select');
+                    if (selTam) {
+                        selTam.addEventListener('change', function() {
+                            estado.tamanoPagina = parseInt(this.value, 10) || 15;
+                            estado.render(true);
+                        });
+                    }
+
+                    estado.barra.querySelectorAll('.monco-page-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            const val = this.getAttribute('data-page');
+                            if (val === 'prev' && estado.paginaActual > 1) {
+                                estado.paginaActual--;
+                            } else if (val === 'next' && estado.paginaActual < totalPaginas) {
+                                estado.paginaActual++;
+                            } else if (val !== 'prev' && val !== 'next') {
+                                estado.paginaActual = parseInt(val, 10) || 1;
+                            }
+                            estado.render(false);
+                        });
+                    });
+                };
+
+                paginadoresActivos.push(estado);
+                estado.render(true);
+            });
+        }
+
+        window.refrescarPaginacionTablas = function(resetearPagina) {
+            paginadoresActivos.forEach(function(p) {
+                p.render(Boolean(resetearPagina));
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', inicializarPaginacionTablas);
+        } else {
+            setTimeout(inicializarPaginacionTablas, 0);
         }
     })();
 </script>
