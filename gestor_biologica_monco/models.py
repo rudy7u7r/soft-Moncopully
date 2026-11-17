@@ -26,8 +26,8 @@ def vacas_disponibles():
         diagnosticogestacion__isnull=True
     ).values_list('vaca', flat=True)
     
-    # Retorna las hembras excluyendo las preñadas y las pendientes de diagnóstico
-    return Bovino.objects.filter(sexo='Hembra').exclude(
+    # Retorna las hembras activas excluyendo las preñadas y las pendientes de diagnóstico
+    return Bovino.objects.filter(sexo='Hembra', activo=True).exclude(
         id_bovino__in=vacas_prenadas
     ).exclude(
         id_bovino__in=vacas_pendientes
@@ -105,6 +105,7 @@ class Bovino(models.Model):
     madre = models.ForeignKey(Madre, on_delete=models.SET_NULL, null=True, blank=True, db_column='id_madre')
     pajuela_semen = models.ForeignKey('PajuelaSemen', on_delete=models.SET_NULL, null=True, blank=True, db_column='pajuela_semen')
     estado_actual = models.CharField(max_length=20)
+    activo = models.BooleanField(default=True)
     def __str__(self): return self.codigo_rfid
 
 class PajuelaSemen(models.Model):
@@ -114,6 +115,7 @@ class PajuelaSemen(models.Model):
     lote_pajuela = models.CharField(max_length=30, default=generar_lote, unique=True)
     fecha_extraccion = models.DateField()
     stock = models.IntegerField()
+    activo = models.BooleanField(default=True)
     def __str__(self):
         if self.toro:
             return f"Pajuela {self.lote_pajuela} (Toro local: {self.toro.codigo_rfid})"
@@ -142,6 +144,7 @@ class Inseminacion(models.Model):
     vaca = models.ForeignKey(Bovino, on_delete=models.CASCADE, db_column='id_vaca', limit_choices_to=vacas_disponibles)
     pajuela = models.ForeignKey(PajuelaSemen, on_delete=models.RESTRICT, db_column='id_pajuela')
     fecha_servicio = models.DateTimeField()
+    activo = models.BooleanField(default=True)
 
     def clean(self):
         if hasattr(self, 'vaca'):

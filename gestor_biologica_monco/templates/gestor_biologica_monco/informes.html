@@ -177,7 +177,12 @@
             <li><a href="/inseminacion/">Inseminación</a></li>
             <li><a href="/linaje/">Linaje Sanguíneo</a></li>
             <li><a href="/pajuelas/">Mantenedor de Pajuelas</a></li>
-            <li><a href="/informes/" class="active">Informes</a></li>
+            <li>
+                <a href="/informes/" class="active">Informes</a>
+                <ul style="list-style: none; padding-left: 15px; margin-top: 5px;">
+                    <li><a href="/informes/ingreso-masivo/" style="font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;">↳ Ingreso Masivo de Registros</a></li>
+                </ul>
+            </li>
         </ul>
         <div class="logout">
             <ul class="menu-links" style="padding:0;">
@@ -198,115 +203,7 @@
 
         {% include "gestor_biologica_monco/_parcela_decoracion.html" %}
 
-        <!-- MÓDULO 1 (SEMANA 4): INTERFAZ DE INGESTA RFID Y REPORTES DE CARGA (CSV / EXCEL) -->
-        <div class="content-card">
-            <div class="page-title">
-                <h1>Ingesta Masiva de Registros RFID (CSV / Excel)</h1>
-                <div class="template-btns">
-                    <a href="/exportar/plantilla-rfid/?formato=xlsx" class="btn-outline">Descargar Plantilla Excel (.xlsx)</a>
-                    <a href="/exportar/plantilla-rfid/?formato=csv" class="btn-outline">Descargar Plantilla CSV (.csv)</a>
-                </div>
-            </div>
-
-            <div class="ingesta-grid">
-                <div class="upload-zone">
-                    <h3>Cargar Planilla de Terreno (.xlsx o .csv)</h3>
-                    <p>Suba la planilla capturada por el lector RFID o registrada en terreno. El sistema ejecutará la validación línea por línea antes de insertar los ejemplares en la base de datos.</p>
-
-                    <form method="POST" action="/informes/" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label>Seleccione Archivo CSV o Excel (.xlsx)</label>
-                            <input type="file" name="archivo_rfid" accept=".csv,.xlsx,.txt" class="form-control" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Tratamiento de Códigos RFID Duplicados</label>
-                            <select name="modo_duplicados" class="form-control">
-                                <option value="omitir">Omitir códigos RFID ya existentes (Recomendado)</option>
-                                <option value="actualizar">Actualizar estado y datos de códigos RFID existentes</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn-primary">Procesar y Validar Planilla RFID</button>
-                    </form>
-                </div>
-
-                <div class="spec-box">
-                    <h4>Estructura de Columnas Soportada</h4>
-                    <ul class="spec-list">
-                        <li><strong>codigo_rfid:</strong> Identificador único del chip RFID (Obligatorio).</li>
-                        <li><strong>sexo:</strong> <code>Hembra</code> o <code>Macho</code> (también acepta <code>Vaca</code>, <code>Toro</code>, <code>F</code>, <code>M</code>).</li>
-                        <li><strong>fecha_nacimiento:</strong> Formato <code>AAAA-MM-DD</code> o <code>DD/MM/AAAA</code>.</li>
-                        <li><strong>raza:</strong> Nombre de la raza (ej. <code>Angus</code>, <code>Hereford</code>).</li>
-                        <li><strong>estado_actual:</strong> Estado productivo (ej. <code>Activo</code>, <code>Reproductora</code>, <code>Cría</code>).</li>
-                        <li><strong>madre_rfid / lote_pajuela:</strong> Opcionales para vinculación automática de linaje.</li>
-                    </ul>
-                </div>
-            </div>
-
-            {% if reporte_carga %}
-            <div class="carga-report-box">
-                <h3 style="font-size: 1.08rem; color: var(--primary); margin-bottom: 14px;">
-                    Reporte de Carga y Validación — Archivo: {{ reporte_carga.nombre_archivo }}
-                </h3>
-
-                {% if reporte_carga.error_general %}
-                    <div class="alert-danger">{{ reporte_carga.error_general }}</div>
-                {% else %}
-                    <div class="carga-kpis">
-                        <div class="carga-kpi">
-                            <div class="lbl">Filas Procesadas</div>
-                            <div class="val">{{ reporte_carga.total_filas }}</div>
-                        </div>
-                        <div class="carga-kpi">
-                            <div class="lbl">Nuevos Registrados</div>
-                            <div class="val success">{{ reporte_carga.creados }}</div>
-                        </div>
-                        <div class="carga-kpi">
-                            <div class="lbl">Actualizados</div>
-                            <div class="val">{{ reporte_carga.actualizados }}</div>
-                        </div>
-                        <div class="carga-kpi">
-                            <div class="lbl">Omitidos (Duplicados)</div>
-                            <div class="val">{{ reporte_carga.omitidos }}</div>
-                        </div>
-                        <div class="carga-kpi">
-                            <div class="lbl">Errores Detectados</div>
-                            <div class="val {% if reporte_carga.errores > 0 %}danger{% endif %}">{{ reporte_carga.errores }}</div>
-                        </div>
-                    </div>
-
-                    <div class="report-table-wrap">
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>Fila</th>
-                                    <th>Código RFID</th>
-                                    <th>Resultado</th>
-                                    <th>Detalle de Validación</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for det in reporte_carga.detalles %}
-                                <tr>
-                                    <td>#{{ det.fila }}</td>
-                                    <td><strong>{{ det.rfid }}</strong></td>
-                                    <td>
-                                        <span class="badge badge-{{ det.tipo }}">{{ det.estado }}</span>
-                                    </td>
-                                    <td>{{ det.mensaje }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- MÓDULO 2 (SEMANA 4): EXPORTACIÓN A EXCEL PARA TERRENO (OFFLINE) -->
+        <!-- EXPORTACIÓN A EXCEL PARA TERRENO (OFFLINE) -->
         <div class="content-card">
             <div class="page-title">
                 <h1>Exportación de Planillas Excel para Uso en Terreno (Offline)</h1>

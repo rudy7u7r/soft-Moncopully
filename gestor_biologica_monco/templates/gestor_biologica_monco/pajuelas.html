@@ -447,11 +447,7 @@
                             </td>
                             <td>{{ pajuela.fecha_extraccion|date:"d M Y" }}</td>
                             <td>
-                                <div class="stock-control">
-                                    <button type="button" class="btn-step" title="Descontar 1 unidad" onclick="ajustarStockAjax('{{ pajuela.id_pajuela }}', 'restar_uno')">-</button>
-                                    <span id="stock-texto-{{ pajuela.id_pajuela }}" data-stock="{{ pajuela.stock }}" style="min-width: 85px; text-align: center; font-weight: 600;">{{ pajuela.stock }} unidades</span>
-                                    <button type="button" class="btn-step" title="Agregar 1 unidad" onclick="ajustarStockAjax('{{ pajuela.id_pajuela }}', 'sumar_uno')">+</button>
-                                </div>
+                                <span id="stock-texto-{{ pajuela.id_pajuela }}" data-stock="{{ pajuela.stock }}" style="font-weight: 700; color: var(--primary);">{{ pajuela.stock }} unidades</span>
                             </td>
                             <td id="estado-celda-{{ pajuela.id_pajuela }}">
                                 {% if pajuela.stock > 10 %}
@@ -463,14 +459,14 @@
                             <td>
                                 <div class="row-actions">
                                     <button type="button" class="btn-action"
-                                        onclick="abrirModalEditar('{{ pajuela.id_pajuela }}', '{{ pajuela.lote_pajuela|escapejs }}', document.getElementById('stock-texto-{{ pajuela.id_pajuela }}').getAttribute('data-stock'), '{{ pajuela.fecha_extraccion|date:'Y-m-d' }}')">
+                                        onclick="abrirModalEditar('{{ pajuela.id_pajuela }}', '{{ pajuela.lote_pajuela|escapejs }}', '{{ pajuela.fecha_extraccion|date:'Y-m-d' }}')">
                                         Editar Lote
                                     </button>
-                                    <form method="POST" action="/pajuelas/?filtro={{ filtro_actual }}{% if busqueda %}&q={{ busqueda }}{% endif %}" style="display:inline;" onsubmit="return confirm('¿Está seguro de que desea eliminar el lote {{ pajuela.lote_pajuela }}?');">
+                                    <form method="POST" action="/pajuelas/?filtro={{ filtro_actual }}{% if busqueda %}&q={{ busqueda }}{% endif %}" style="display:inline;" onsubmit="return confirm('¿Está seguro de que desea deshabilitar el lote {{ pajuela.lote_pajuela }}? (Permanecerá guardado en la base de datos)');">
                                         {% csrf_token %}
-                                        <input type="hidden" name="accion" value="eliminar">
+                                        <input type="hidden" name="accion" value="deshabilitar">
                                         <input type="hidden" name="pajuela_id" value="{{ pajuela.id_pajuela }}">
-                                        <button type="submit" class="btn-action btn-action-danger">Eliminar</button>
+                                        <button type="submit" class="btn-action btn-action-danger">Deshabilitar</button>
                                     </form>
                                 </div>
                             </td>
@@ -486,7 +482,7 @@
         </div>
     </main>
 
-    <!-- Modal para Editar Lote / Ajustar Stock -->
+    <!-- Modal para Editar Lote (Sin manipulación de stock) -->
     <div class="modal-overlay" id="modalEditarLote">
         <div class="modal-box">
             <div class="modal-header">
@@ -504,11 +500,6 @@
                 </div>
 
                 <div class="modal-group">
-                    <label>Stock Disponible (Unidades)</label>
-                    <input type="number" name="stock" id="modalLoteStock" class="modal-input" min="0" required>
-                </div>
-
-                <div class="modal-group">
                     <label>Fecha de Extracción / Recepción</label>
                     <input type="date" name="fecha_extraccion" id="modalLoteFecha" class="modal-input" required>
                 </div>
@@ -522,59 +513,9 @@
     </div>
 
     <script>
-        function obtenerCsrfToken() {
-            const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
-            return input ? input.value : '';
-        }
-
-        function ajustarStockAjax(pajuelaId, accion) {
-            const formData = new FormData();
-            formData.append('csrfmiddlewaretoken', obtenerCsrfToken());
-            formData.append('accion', accion);
-            formData.append('pajuela_id', pajuelaId);
-
-            fetch('/pajuelas/', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data.ok) {
-                    const spanStock = document.getElementById('stock-texto-' + pajuelaId);
-                    if (spanStock) {
-                        spanStock.textContent = data.stock + ' unidades';
-                        spanStock.setAttribute('data-stock', data.stock);
-                    }
-                    const celdaEstado = document.getElementById('estado-celda-' + pajuelaId);
-                    if (celdaEstado) {
-                        if (data.es_critico) {
-                            celdaEstado.innerHTML = '<span class="badge badge-low">Stock Crítico</span>';
-                        } else {
-                            celdaEstado.innerHTML = '<span class="badge">Suficiente</span>';
-                        }
-                    }
-                    const kpiDosis = document.getElementById('kpiTotalDosis');
-                    if (kpiDosis) kpiDosis.textContent = data.total_dosis;
-
-                    const kpiCriticos = document.getElementById('kpiTotalCriticos');
-                    if (kpiCriticos) {
-                        kpiCriticos.textContent = data.total_criticos;
-                        kpiCriticos.style.color = data.total_criticos > 0 ? '#c62828' : 'var(--primary)';
-                    }
-                }
-            })
-            .catch(function(err) {
-                console.error('Error al actualizar stock:', err);
-            });
-        }
-
-        function abrirModalEditar(id, codigo, stock, fecha) {
+        function abrirModalEditar(id, codigo, fecha) {
             document.getElementById('modalPajuelaId').value = id;
             document.getElementById('modalLoteCodigo').value = codigo;
-            document.getElementById('modalLoteStock').value = stock;
             document.getElementById('modalLoteFecha').value = fecha;
             document.getElementById('modalEditarLote').classList.add('open');
         }

@@ -128,7 +128,7 @@
             mainMenuList.appendChild(liUsuarios);
         }
 
-        // Mostrar "Diagnóstico de Preñez" en el menú lateral únicamente cuando esté seleccionada la sección Inseminación
+        // Mostrar "Diagnóstico de Preñez" únicamente cuando esté seleccionada la sección Inseminación
         const enSeccionInseminacion = window.location.pathname.indexOf('/inseminacion') === 0;
         document.querySelectorAll('.sidebar .menu-links a[href="/inseminacion/diagnostico/"]').forEach(function(diagLink) {
             const subUl = diagLink.closest('ul');
@@ -141,6 +141,102 @@
                 }
             }
         });
+
+        // Mostrar "↳ Ingreso Masivo de Registros" debajo de Informes únicamente cuando esté seleccionada la sección Informes
+        const enSeccionInformes = window.location.pathname.indexOf('/informes') === 0;
+        const linkInformes = document.querySelector('.sidebar > .menu-links > li > a[href="/informes/"]');
+        if (linkInformes && enSeccionInformes && puedeInformes) {
+            const liInformes = linkInformes.closest('li');
+            if (liInformes && !liInformes.querySelector('a[href="/informes/ingreso-masivo/"]')) {
+                const subUlInf = document.createElement('ul');
+                subUlInf.style.cssText = 'list-style: none; padding-left: 15px; margin-top: 5px; display: block !important;';
+                const subLiInf = document.createElement('li');
+                const subAInf = document.createElement('a');
+                subAInf.href = '/informes/ingreso-masivo/';
+                subAInf.style.cssText = 'font-size: 0.85rem; padding: 8px 15px; background-color: rgba(255,255,255,0.05); color: #c8e6c9;';
+                subAInf.textContent = '↳ Ingreso Masivo de Registros';
+                if (window.location.pathname.indexOf('/informes/ingreso-masivo') === 0) {
+                    subAInf.classList.add('active');
+                }
+                subLiInf.appendChild(subAInf);
+                subUlInf.appendChild(subLiInf);
+                liInformes.appendChild(subUlInf);
+            }
+        }
+        document.querySelectorAll('.sidebar .menu-links a[href="/informes/ingreso-masivo/"]').forEach(function(infSubLink) {
+            const subUl = infSubLink.closest('ul');
+            if (!enSeccionInformes && subUl && !subUl.classList.contains('menu-links')) {
+                subUl.style.display = 'none';
+            }
+        });
+
+        // Animación al Iniciar Sesión: Cabeza de Vaca diciendo "¡MUUUU!" y mostrando el software completo
+        if (window.location.search.indexOf('bienvenida=1') !== -1) {
+            const overlay = document.createElement('div');
+            overlay.className = 'monco-welcome-overlay';
+            overlay.innerHTML =
+                '<div class="cow-welcome-stage">' +
+                    '<div class="moo-speech-bubble">&iexcl;MUUUU!</div>' +
+                    '<svg class="cow-head-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">' +
+                        '<!-- Cuernos -->' +
+                        '<path d="M58,52 C42,30 30,36 36,56 C40,64 52,64 58,58 Z" fill="#fef3c7" stroke="#1e293b" stroke-width="3.5"/>' +
+                        '<path d="M142,52 C158,30 170,36 164,56 C160,64 148,64 142,58 Z" fill="#fef3c7" stroke="#1e293b" stroke-width="3.5"/>' +
+                        '<!-- Oreja Izquierda -->' +
+                        '<g class="cow-ear-left">' +
+                            '<ellipse cx="32" cy="82" rx="24" ry="13" transform="rotate(-20 32 82)" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>' +
+                            '<ellipse cx="33" cy="83" rx="14" ry="6.5" transform="rotate(-20 33 83)" fill="#fda4af"/>' +
+                        '</g>' +
+                        '<!-- Oreja Derecha -->' +
+                        '<g class="cow-ear-right">' +
+                            '<ellipse cx="168" cy="82" rx="24" ry="13" transform="rotate(20 168 82)" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>' +
+                            '<ellipse cx="167" cy="83" rx="14" ry="6.5" transform="rotate(20 167 83)" fill="#fda4af"/>' +
+                        '</g>' +
+                        '<!-- Cabeza Base -->' +
+                        '<rect x="46" y="45" width="108" height="106" rx="46" fill="#ffffff" stroke="#1e293b" stroke-width="4"/>' +
+                        '<!-- Manchas Holstein -->' +
+                        '<path d="M50,62 C78,52 92,76 80,102 C66,112 48,100 47,78 Z" fill="#1e293b"/>' +
+                        '<path d="M124,50 C145,54 154,75 148,94 C132,96 118,80 124,50 Z" fill="#1e293b"/>' +
+                        '<!-- Ojos -->' +
+                        '<circle cx="74" cy="92" r="9" fill="#ffffff"/>' +
+                        '<circle cx="75" cy="92" r="6" fill="#0f172a"/>' +
+                        '<circle cx="73" cy="89" r="2.2" fill="#ffffff"/>' +
+                        '<circle cx="126" cy="92" r="9" fill="#ffffff" stroke="#1e293b" stroke-width="1.5"/>' +
+                        '<circle cx="125" cy="92" r="6" fill="#0f172a"/>' +
+                        '<circle cx="123" cy="89" r="2.2" fill="#ffffff"/>' +
+                        '<!-- Mandíbula Inferior y Boca animada diciendo MUUU -->' +
+                        '<g class="cow-jaw-anim">' +
+                            '<ellipse cx="100" cy="154" rx="34" ry="20" fill="#fb7185" stroke="#1e293b" stroke-width="3.5"/>' +
+                            '<ellipse cx="100" cy="153" rx="20" ry="11" fill="#881337"/>' +
+                            '<ellipse cx="100" cy="158" rx="13" ry="6" fill="#fda4af"/>' +
+                        '</g>' +
+                        '<!-- Hocico Rosado Superior -->' +
+                        '<ellipse cx="100" cy="132" rx="48" ry="26" fill="#fecdd3" stroke="#1e293b" stroke-width="3.8"/>' +
+                        '<ellipse cx="80" cy="130" rx="7" ry="10" transform="rotate(-15 80 130)" fill="#1e293b"/>' +
+                        '<ellipse cx="120" cy="130" rx="7" ry="10" transform="rotate(15 120 130)" fill="#1e293b"/>' +
+                    '</svg>' +
+                    '<div class="cow-welcome-title">Bienvenido a Agrícola Moncopulli, ' + nombreActivo + '</div>' +
+                    '<div class="cow-welcome-sub">Mostrando el software completo de gestión ganadera...</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+
+            function cerrarBienvenida() {
+                if (!overlay.classList.contains('revelar-software')) {
+                    overlay.classList.add('revelar-software');
+                    setTimeout(function() {
+                        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                    }, 700);
+                }
+            }
+
+            overlay.addEventListener('click', cerrarBienvenida);
+            setTimeout(cerrarBienvenida, 2600);
+
+            if (window.history && window.history.replaceState) {
+                const urlLimpia = window.location.pathname + window.location.search.replace(/([?&])bienvenida=1(&|$)/, '$1').replace(/[?&]$/, '');
+                window.history.replaceState({}, document.title, urlLimpia);
+            }
+        }
 
         // Asegurar que el botón "Cerrar Sesión" siempre cierre la sesión activa y envíe al Login
         document.querySelectorAll('.sidebar .logout a').forEach(function(logoutLink) {

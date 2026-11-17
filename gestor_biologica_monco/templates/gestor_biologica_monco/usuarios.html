@@ -399,11 +399,11 @@
                         <button type="submit" class="btn-primary">Aprobar y Otorgar Permisos</button>
                     </div>
                 </form>
-                <form method="POST" action="/usuarios/" style="margin-top: 8px; text-align: right;" onsubmit="return confirm('¿Rechazar y eliminar el registro del RUT {{ u.rut }}?');">
+                <form method="POST" action="/usuarios/" style="margin-top: 8px; text-align: right;" onsubmit="return confirm('¿Deshabilitar la solicitud del RUT {{ u.rut }}? (Quedará guardada en la base de datos)');">
                     {% csrf_token %}
-                    <input type="hidden" name="accion" value="eliminar_usuario">
+                    <input type="hidden" name="accion" value="deshabilitar_usuario">
                     <input type="hidden" name="usuario_id" value="{{ u.id_usuario }}">
-                    <button type="submit" class="btn-action btn-action-danger">Rechazar / Eliminar Solicitud</button>
+                    <button type="submit" class="btn-action btn-action-danger">Deshabilitar</button>
                 </form>
             </div>
             {% empty %}
@@ -494,11 +494,11 @@
                                         <button type="submit" class="btn-action btn-action-warn">Poner en Espera</button>
                                     </form>
 
-                                    <form method="POST" action="/usuarios/" style="display:inline;" onsubmit="return confirm('¿Está seguro de eliminar el acceso del RUT {{ u.rut }}?');">
+                                    <form method="POST" action="/usuarios/" style="display:inline;" onsubmit="return confirm('¿Está seguro de deshabilitar el acceso del RUT {{ u.rut }}? (Su registro permanecerá en la base de datos)');">
                                         {% csrf_token %}
-                                        <input type="hidden" name="accion" value="eliminar_usuario">
+                                        <input type="hidden" name="accion" value="deshabilitar_usuario">
                                         <input type="hidden" name="usuario_id" value="{{ u.id_usuario }}">
-                                        <button type="submit" class="btn-action btn-action-danger">Eliminar</button>
+                                        <button type="submit" class="btn-action btn-action-danger">Deshabilitar</button>
                                     </form>
                                 </div>
                             </td>

@@ -313,6 +313,13 @@
                                     {% if bovino.sexo == 'Hembra' %}
                                         <a href="/verificar/?bovino={{ bovino.id_bovino }}" class="btn-fill">Verificar Compatibilidad</a>
                                     {% endif %}
+
+                                    <form method="POST" action="/linaje/" style="display:inline;" onsubmit="return confirm('¿Deshabilitar el bovino {{ bovino.codigo_rfid }}? (Permanecerá guardado en la base de datos)');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="accion" value="deshabilitar_bovino">
+                                        <input type="hidden" name="bovino_id" value="{{ bovino.id_bovino }}">
+                                        <button type="submit" style="padding: 6px 11px; border-radius: 5px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid #e5b8b8; background: #fff; color: #b71c1c;">Deshabilitar</button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

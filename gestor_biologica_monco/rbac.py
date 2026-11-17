@@ -77,35 +77,40 @@ def verificar_password_usuario(usuario, raw_password):
 
 
 RUTS_ADMIN_PROTEGIDOS = ("1111111-1", "22127234-K")
+_DB_VERIFICADA_PROCESO = False
 
 
 def asegurar_usuarios_iniciales():
-    """Garantiza que la cuenta principal de Administrador (1.111.111-1) esté siempre creada y aprobada."""
+    """Garantiza que las migraciones, los datos base y las cuentas de Administrador estén siempre creadas y aprobadas."""
+    global _DB_VERIFICADA_PROCESO
     try:
-        if not Usuario.objects.exists():
-            Usuario.objects.create(
-                rut="1.111.111-1",
-                nombre_completo="jordan loaiza",
-                email="jordanloaiza@gmail.com",
-                password=make_password("admin123"),
-                rol="admin",
-                aprobado_por_admin=True,
-                acceso_rendimiento=True,
-                acceso_inseminacion=True,
-                acceso_linaje=True,
-                acceso_pajuelas=True,
-                acceso_informes=True,
-                acceso_bovinos=True,
-                activo=True,
-            )
-        else:
-            ruts_existentes = {normalizar_rut(u.rut): u for u in Usuario.objects.all()}
-            # Si se borró accidentalmente el RUT administrador 1.111.111-1, restaurarlo
-            if "1111111-1" not in ruts_existentes:
+        if not _DB_VERIFICADA_PROCESO:
+            _DB_VERIFICADA_PROCESO = True
+            try:
+                Usuario.objects.exists()
+            except Exception:
+                from django.core.management import call_command
+                call_command("migrate", interactive=False, verbosity=0)
+
+            try:
+                from .models import Bovino
+                if Bovino.objects.count() < 100:
+                    from django.core.management import call_command
+                    call_command("cargar_datos_demo")
+            except Exception:
+                pass
+
+        ruts_existentes = {normalizar_rut(u.rut): u for u in Usuario.objects.all()}
+        cuentas_admin_base = [
+            ("1.111.111-1", "1111111-1", "jordan loaiza", "jordanloaiza@gmail.com"),
+            ("22.127.234-K", "22127234-K", "jordan bastian", "jordanloaiza87@gmail.com"),
+        ]
+        for rut_vis, norm_k, nombre_adm, email_adm in cuentas_admin_base:
+            if norm_k not in ruts_existentes and not Usuario.objects.filter(email__iexact=email_adm).exists():
                 Usuario.objects.create(
-                    rut="1.111.111-1",
-                    nombre_completo="jordan loaiza",
-                    email="jordanloaiza@gmail.com",
+                    rut=rut_vis,
+                    nombre_completo=nombre_adm,
+                    email=email_adm,
                     password=make_password("admin123"),
                     rol="admin",
                     aprobado_por_admin=True,
@@ -118,38 +123,38 @@ def asegurar_usuarios_iniciales():
                     activo=True,
                 )
 
-            # Asegurar que el RUT de Administrador (1.111.111-1) esté siempre habilitado como Admin
-            for u in Usuario.objects.all():
-                cambios = []
-                if normalizar_rut(u.rut) in RUTS_ADMIN_PROTEGIDOS:
-                    if u.rol != "admin":
-                        u.rol = "admin"
-                        cambios.append("rol")
-                    if not u.aprobado_por_admin:
-                        u.aprobado_por_admin = True
-                        cambios.append("aprobado_por_admin")
-                    if not u.activo:
-                        u.activo = True
-                        cambios.append("activo")
-                    for campo_perm in (
-                        "acceso_rendimiento",
-                        "acceso_inseminacion",
-                        "acceso_linaje",
-                        "acceso_pajuelas",
-                        "acceso_informes",
-                        "acceso_bovinos",
-                    ):
-                        if not getattr(u, campo_perm):
-                            setattr(u, campo_perm, True)
-                            cambios.append(campo_perm)
-                if u.rol in ("admin", "veterinario", "operario") and not u.aprobado_por_admin:
+        # Asegurar que los RUTs de Administrador estén siempre habilitados como Admin
+        for u in Usuario.objects.all():
+            cambios = []
+            if normalizar_rut(u.rut) in RUTS_ADMIN_PROTEGIDOS:
+                if u.rol != "admin":
+                    u.rol = "admin"
+                    cambios.append("rol")
+                if not u.aprobado_por_admin:
                     u.aprobado_por_admin = True
                     cambios.append("aprobado_por_admin")
-                if u.password and not u.password.startswith("pbkdf2_"):
-                    u.password = make_password(u.password)
-                    cambios.append("password")
-                if cambios:
-                    u.save(update_fields=list(set(cambios)))
+                if not u.activo:
+                    u.activo = True
+                    cambios.append("activo")
+                for campo_perm in (
+                    "acceso_rendimiento",
+                    "acceso_inseminacion",
+                    "acceso_linaje",
+                    "acceso_pajuelas",
+                    "acceso_informes",
+                    "acceso_bovinos",
+                ):
+                    if not getattr(u, campo_perm):
+                        setattr(u, campo_perm, True)
+                        cambios.append(campo_perm)
+            if u.rol in ("admin", "veterinario", "operario") and not u.aprobado_por_admin:
+                u.aprobado_por_admin = True
+                cambios.append("aprobado_por_admin")
+            if u.password and not u.password.startswith("pbkdf2_"):
+                u.password = make_password(u.password)
+                cambios.append("password")
+            if cambios:
+                u.save(update_fields=list(set(cambios)))
     except Exception:
         pass
 

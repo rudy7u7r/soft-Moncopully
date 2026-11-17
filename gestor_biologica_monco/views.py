@@ -37,12 +37,12 @@ from .models import (
 )
 
 def _construir_metricas_reproductivas():
-    bovinos_qs = Bovino.objects.select_related('raza').all().order_by('sexo', 'codigo_rfid')
+    bovinos_qs = Bovino.objects.filter(activo=True).select_related('raza').order_by('sexo', 'codigo_rfid')
 
     # Agregaciones en una sola pasada SQL para alto rendimiento con +1.500 bovinos
     ins_por_vaca = {
         r['vaca_id']: r['total']
-        for r in Inseminacion.objects.values('vaca_id').annotate(total=Count('id_inseminacion'))
+        for r in Inseminacion.objects.filter(activo=True).values('vaca_id').annotate(total=Count('id_inseminacion'))
     }
     diags_por_vaca = {}
     for r in DiagnosticoGestacion.objects.values('inseminacion__vaca_id', 'resultado').annotate(total=Count('id_diagnostico')):
@@ -59,7 +59,7 @@ def _construir_metricas_reproductivas():
     }
 
     pajuelas_por_toro = {}
-    for r in PajuelaSemen.objects.filter(toro__isnull=False).values('toro_id').annotate(num_lotes=Count('id_pajuela'), stock_actual=Sum('stock')):
+    for r in PajuelaSemen.objects.filter(toro__isnull=False, activo=True).values('toro_id').annotate(num_lotes=Count('id_pajuela'), stock_actual=Sum('stock')):
         pajuelas_por_toro[r['toro_id']] = {
             'num_lotes': r['num_lotes'],
             'stock_actual': r['stock_actual'] or 0,
@@ -67,7 +67,7 @@ def _construir_metricas_reproductivas():
 
     ins_por_toro = {
         r['pajuela__toro_id']: r['total']
-        for r in Inseminacion.objects.filter(pajuela__toro__isnull=False)
+        for r in Inseminacion.objects.filter(pajuela__toro__isnull=False, activo=True)
         .values('pajuela__toro_id')
         .annotate(total=Count('id_inseminacion'))
     }
@@ -139,7 +139,7 @@ def _construir_metricas_reproductivas():
 
     ins_por_pajuela = {
         r['pajuela_id']: r['total']
-        for r in Inseminacion.objects.values('pajuela_id').annotate(total=Count('id_inseminacion'))
+        for r in Inseminacion.objects.filter(activo=True).values('pajuela_id').annotate(total=Count('id_inseminacion'))
     }
     diags_por_pajuela = {}
     for r in DiagnosticoGestacion.objects.values('inseminacion__pajuela_id', 'resultado').annotate(total=Count('id_diagnostico')):
@@ -148,7 +148,7 @@ def _construir_metricas_reproductivas():
             diags_por_pajuela[pid] = {'preñada': 0, 'vacia': 0, 'mortinato': 0}
         diags_por_pajuela[pid][r['resultado']] = r['total']
 
-    pajuelas_qs = PajuelaSemen.objects.select_related('toro', 'toro__raza').all()
+    pajuelas_qs = PajuelaSemen.objects.filter(activo=True).select_related('toro', 'toro__raza')
     pajuelas_metricas = []
 
     for paj in pajuelas_qs:
@@ -191,9 +191,10 @@ def _construir_metricas_reproductivas():
 def inicio(request):
     today = timezone.localdate()
     
-    total_bovinos = Bovino.objects.count()
+    total_bovinos = Bovino.objects.filter(activo=True).count()
     
     total_inseminaciones = Inseminacion.objects.filter(
+        activo=True,
         fecha_servicio__year=today.year,
         fecha_servicio__month=today.month
     ).count()
@@ -237,10 +238,10 @@ def inicio(request):
         mort_data_ano.append(qs_mortinatos.filter(fecha_diagnostico__year=y).count())
         nac_data_ano.append(qs_partos_vivos.filter(fecha_parto__year=y).count())
 
-    ultimos_ingresos = Bovino.objects.order_by('-id_bovino')[:5]
+    ultimos_ingresos = Bovino.objects.filter(activo=True).order_by('-id_bovino')[:5]
 
-    hembras = Bovino.objects.filter(sexo='Hembra').count()
-    machos = Bovino.objects.filter(sexo='Macho').count()
+    hembras = Bovino.objects.filter(sexo='Hembra', activo=True).count()
+    machos = Bovino.objects.filter(sexo='Macho', activo=True).count()
     
     context = {
         'total_bovinos': total_bovinos,
@@ -260,6 +261,16 @@ def inicio(request):
 
 
 def rendimiento_genetico(request):
+    if request.method == "POST":
+        accion = request.POST.get("accion")
+        if accion == "deshabilitar_bovino":
+            bid = request.POST.get("bovino_id")
+            Bovino.objects.filter(pk=bid).update(activo=False)
+        elif accion == "deshabilitar_pajuela":
+            pid = request.POST.get("pajuela_id")
+            PajuelaSemen.objects.filter(pk=pid).update(activo=False)
+        return redirect("/rendimiento/")
+
     bovinos_metricas, pajuelas_metricas = _construir_metricas_reproductivas()
     vacas_metricas = [b for b in bovinos_metricas if b["sexo"] == "Hembra"]
     toros_metricas = [b for b in bovinos_metricas if b["sexo"] == "Macho"]
@@ -277,7 +288,7 @@ def historial(request):
     filtro = request.GET.get('filtro', 'todo')
     hoy = timezone.localdate()
 
-    inseminaciones = Inseminacion.objects.select_related(
+    inseminaciones = Inseminacion.objects.filter(activo=True).select_related(
         "vaca", 
         "pajuela"
     ).order_by("-fecha_servicio")
@@ -312,10 +323,15 @@ def historial(request):
     )
 
 def linaje(request):
+    if request.method == "POST" and request.POST.get("accion") == "deshabilitar_bovino":
+        bid = request.POST.get("bovino_id")
+        Bovino.objects.filter(pk=bid).update(activo=False)
+        return redirect("/linaje/")
+
     query = request.GET.get('q', '')
     bovino_id = request.GET.get('consultar') or request.GET.get('bovino') or ''
     
-    bovinos = Bovino.objects.select_related("raza", "madre", "pajuela_semen__toro").order_by("-id_bovino")
+    bovinos = Bovino.objects.filter(activo=True).select_related("raza", "madre", "pajuela_semen__toro").order_by("-id_bovino")
     
     if query:
         bovinos = bovinos.filter(codigo_rfid__icontains=query)
@@ -559,9 +575,10 @@ def login(request):
                 request.session["usuario_id"] = usuario_db.id_usuario
                 request.session["usuario_rut"] = usuario_db.rut
                 request.session["usuario_rol"] = usuario_db.rol
-                destino = "/inicio/" if (usuario_db.aprobado_por_admin and usuario_db.rol != "pendiente") else "/esperando-permisos/"
+                request.session["mostrar_animacion_vaca"] = True
+                destino = "/inicio/?bienvenida=1" if (usuario_db.aprobado_por_admin and usuario_db.rol != "pendiente") else "/esperando-permisos/"
                 if es_ajax:
-                    return JsonResponse({"ok": True, "redirect": destino})
+                    return JsonResponse({"ok": True, "redirect": destino, "mostrar_vaca": True})
                 return redirect(destino)
 
         # 2B-pre: Verificar que el correo Gmail no esté ya registrado en otra cuenta
@@ -765,16 +782,16 @@ def gestion_usuarios(request):
                     u_obj.save()
                     mensaje_exito = f"Los permisos del usuario {u_obj.rut} fueron revocados (En espera)."
 
-                elif accion == "eliminar_usuario":
+                elif accion in ("deshabilitar_usuario", "eliminar_usuario"):
                     uid = request.POST.get("usuario_id")
                     u_obj = Usuario.objects.get(pk=uid)
                     if normalizar_rut(u_obj.rut) in ("1111111-1", "22127234-K"):
-                        raise ValidationError("La cuenta principal de Administrador no puede ser eliminada del sistema.")
-                    if u_obj.rol == "admin" and Usuario.objects.filter(rol="admin", aprobado_por_admin=True).count() <= 1:
-                        raise ValidationError("No se puede eliminar el único Administrador activo del sistema.")
-                    rut_elim = u_obj.rut
-                    u_obj.delete()
-                    mensaje_exito = f"El registro del RUT {rut_elim} fue eliminado."
+                        raise ValidationError("La cuenta principal de Administrador no puede ser deshabilitada del sistema.")
+                    if u_obj.rol == "admin" and Usuario.objects.filter(rol="admin", aprobado_por_admin=True, activo=True).count() <= 1:
+                        raise ValidationError("No se puede deshabilitar el único Administrador activo del sistema.")
+                    u_obj.activo = False
+                    u_obj.save(update_fields=["activo"])
+                    mensaje_exito = f"El usuario con RUT {u_obj.rut} fue deshabilitado (su registro permanece guardado en la base de datos)."
 
             except ValidationError as e:
                 mensaje_error = e.message
@@ -783,8 +800,8 @@ def gestion_usuarios(request):
 
     panel_bloqueado = not bool(request.session.get("usuarios_desbloqueado"))
     busqueda_rut = (request.GET.get("rut") or request.GET.get("q") or "").strip()
-    usuarios_pendientes = list(Usuario.objects.filter(aprobado_por_admin=False).order_by("-id_usuario"))
-    usuarios_aprobados = list(Usuario.objects.filter(aprobado_por_admin=True).order_by("id_usuario"))
+    usuarios_pendientes = list(Usuario.objects.filter(aprobado_por_admin=False, activo=True).order_by("-id_usuario"))
+    usuarios_aprobados = list(Usuario.objects.filter(aprobado_por_admin=True, activo=True).order_by("id_usuario"))
 
     if busqueda_rut:
         q_limpio = "".join(ch for ch in busqueda_rut.upper() if ch.isalnum())
@@ -809,7 +826,12 @@ def gestion_usuarios(request):
     })
 
 def inseminacion(request):
-    lista_inseminaciones = Inseminacion.objects.select_related('vaca', 'pajuela').all().order_by('-fecha_servicio')
+    if request.method == "POST" and request.POST.get("accion") == "deshabilitar_inseminacion":
+        ins_id = request.POST.get("inseminacion_id")
+        Inseminacion.objects.filter(pk=ins_id).update(activo=False)
+        return redirect("/inseminacion/")
+
+    lista_inseminaciones = Inseminacion.objects.filter(activo=True).select_related('vaca', 'pajuela').order_by('-fecha_servicio')
     return render(request, "gestor_biologica_monco/inseminacion.html", {"inseminaciones": lista_inseminaciones})
 
 def pajuelas(request):
@@ -825,54 +847,34 @@ def pajuelas(request):
         try:
             pajuela_obj = PajuelaSemen.objects.get(pk=pajuela_id)
 
-            if accion == "sumar_uno":
-                pajuela_obj.stock += 1
-                pajuela_obj.save(update_fields=["stock"])
-                mensaje_exito = f"Se agregó 1 unidad al lote {pajuela_obj.lote_pajuela} (Stock actual: {pajuela_obj.stock})."
-
-            elif accion == "restar_uno":
-                if pajuela_obj.stock > 0:
-                    pajuela_obj.stock -= 1
-                    pajuela_obj.save(update_fields=["stock"])
-                    mensaje_exito = f"Se descontó 1 unidad del lote {pajuela_obj.lote_pajuela} (Stock actual: {pajuela_obj.stock})."
-                else:
-                    mensaje_error = f"El lote {pajuela_obj.lote_pajuela} ya tiene stock en 0."
-
-            elif accion == "editar_lote":
+            if accion == "editar_lote":
                 nuevo_lote = (request.POST.get("lote_pajuela") or "").strip()
-                nuevo_stock_str = request.POST.get("stock", "0")
                 nueva_fecha = request.POST.get("fecha_extraccion")
 
-                nuevo_stock = int(nuevo_stock_str)
-                if nuevo_stock < 0:
-                    mensaje_error = "El stock no puede ser un número negativo."
-                elif not nuevo_lote:
+                if not nuevo_lote:
                     mensaje_error = "El código de lote no puede quedar vacío."
                 elif PajuelaSemen.objects.filter(lote_pajuela=nuevo_lote).exclude(pk=pajuela_obj.pk).exists():
                     mensaje_error = f"Ya existe otro lote registrado con el código {nuevo_lote}."
                 else:
                     pajuela_obj.lote_pajuela = nuevo_lote
-                    pajuela_obj.stock = nuevo_stock
                     if nueva_fecha:
                         pajuela_obj.fecha_extraccion = nueva_fecha
-                    pajuela_obj.save()
+                    pajuela_obj.save(update_fields=["lote_pajuela", "fecha_extraccion"])
                     mensaje_exito = f"Lote {pajuela_obj.lote_pajuela} actualizado correctamente."
 
-            elif accion == "eliminar":
+            elif accion in ("deshabilitar", "eliminar"):
                 nombre_lote = pajuela_obj.lote_pajuela
-                pajuela_obj.delete()
-                pajuela_obj = None
-                mensaje_exito = f"El lote {nombre_lote} fue eliminado del inventario."
+                pajuela_obj.activo = False
+                pajuela_obj.save(update_fields=["activo"])
+                mensaje_exito = f"El lote {nombre_lote} fue deshabilitado (se conserva almacenado en la base de datos)."
 
-        except RestrictedError:
-            mensaje_error = "No se puede eliminar este lote porque ya cuenta con registros de inseminación asociados. Puede ajustar su stock a 0."
         except PajuelaSemen.DoesNotExist:
             mensaje_error = "El lote seleccionado no fue encontrado."
         except Exception:
             mensaje_error = "Error al procesar la acción sobre el lote de pajuelas."
 
         if es_ajax:
-            todas_qs = PajuelaSemen.objects.all()
+            todas_qs = PajuelaSemen.objects.filter(activo=True)
             return JsonResponse({
                 "ok": mensaje_error is None,
                 "mensaje": mensaje_exito or mensaje_error,
@@ -890,7 +892,7 @@ def pajuelas(request):
     filtro = request.GET.get("filtro", "todos")
     busqueda = (request.GET.get("q") or "").strip()
 
-    todas_pajuelas = PajuelaSemen.objects.select_related('toro', 'toro__raza').all().order_by('-fecha_extraccion', '-id_pajuela')
+    todas_pajuelas = PajuelaSemen.objects.filter(activo=True).select_related('toro', 'toro__raza').order_by('-fecha_extraccion', '-id_pajuela')
 
     # Estadísticas globales del inventario
     total_lotes = todas_pajuelas.count()
@@ -1010,9 +1012,9 @@ def informes(request):
         modo_duplicados = request.POST.get("modo_duplicados", "omitir")
         reporte_carga = procesar_ingesta_rfid(archivo, modo_duplicados=modo_duplicados)
 
-    total_bovinos = Bovino.objects.count()
-    total_inseminaciones = Inseminacion.objects.count()
-    total_pajuelas = PajuelaSemen.objects.count()
+    total_bovinos = Bovino.objects.filter(activo=True).count()
+    total_inseminaciones = Inseminacion.objects.filter(activo=True).count()
+    total_pajuelas = PajuelaSemen.objects.filter(activo=True).count()
     total_alertas = AlertaConsanguinidad.objects.count()
 
     return render(request, "gestor_biologica_monco/informes.html", {
@@ -1021,6 +1023,25 @@ def informes(request):
         "total_inseminaciones": total_inseminaciones,
         "total_pajuelas": total_pajuelas,
         "total_alertas": total_alertas,
+    })
+
+
+def ingreso_masivo_registros(request):
+    reporte_carga = None
+    if request.method == "POST" and request.FILES.get("archivo_rfid"):
+        archivo = request.FILES["archivo_rfid"]
+        modo_duplicados = request.POST.get("modo_duplicados", "omitir")
+        reporte_carga = procesar_ingesta_rfid(archivo, modo_duplicados=modo_duplicados)
+
+    total_bovinos = Bovino.objects.filter(activo=True).count()
+    total_inseminaciones = Inseminacion.objects.filter(activo=True).count()
+    total_pajuelas = PajuelaSemen.objects.filter(activo=True).count()
+
+    return render(request, "gestor_biologica_monco/ingreso_masivo_informes.html", {
+        "reporte_carga": reporte_carga,
+        "total_bovinos": total_bovinos,
+        "total_inseminaciones": total_inseminaciones,
+        "total_pajuelas": total_pajuelas,
     })
 
 

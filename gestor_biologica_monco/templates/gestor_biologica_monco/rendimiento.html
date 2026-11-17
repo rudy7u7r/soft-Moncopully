@@ -329,6 +329,7 @@
                             <th>Terneros Fallecidos (Parto)</th>
                             <th>Tasa Mortalidad</th>
                             <th>Efectividad Preñez</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -358,10 +359,18 @@
                                     <div class="progress-fill" style="width: {{ v.tasa_exito }}%;"></div>
                                 </div>
                             </td>
+                            <td onclick="event.stopPropagation();">
+                                <form method="POST" action="/rendimiento/" style="display:inline;" onsubmit="return confirm('¿Deshabilitar la vaca {{ v.codigo_rfid }}? (Permanecerá guardada en la base de datos)');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="accion" value="deshabilitar_bovino">
+                                    <input type="hidden" name="bovino_id" value="{{ v.id }}">
+                                    <button type="submit" style="padding: 5px 10px; border-radius: 5px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid #e5b8b8; background: #fff; color: #b71c1c;">Deshabilitar</button>
+                                </form>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="9" style="text-align: center; color: var(--text-muted);">No hay vacas registradas.</td>
+                            <td colspan="10" style="text-align: center; color: var(--text-muted);">No hay vacas registradas.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -385,6 +394,7 @@
                             <th>Inseminaciones con su Semen</th>
                             <th>Inseminaciones con Éxito</th>
                             <th>Tasa de Éxito</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -403,10 +413,18 @@
                                     <div class="progress-fill" style="width: {{ t.tasa_exito }}%;"></div>
                                 </div>
                             </td>
+                            <td onclick="event.stopPropagation();">
+                                <form method="POST" action="/rendimiento/" style="display:inline;" onsubmit="return confirm('¿Deshabilitar el toro {{ t.codigo_rfid }}? (Permanecerá guardado en la base de datos)');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="accion" value="deshabilitar_bovino">
+                                    <input type="hidden" name="bovino_id" value="{{ t.id }}">
+                                    <button type="submit" style="padding: 5px 10px; border-radius: 5px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid #e5b8b8; background: #fff; color: #b71c1c;">Deshabilitar</button>
+                                </form>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" style="text-align: center; color: var(--text-muted);">No hay toros registrados.</td>
+                            <td colspan="9" style="text-align: center; color: var(--text-muted);">No hay toros registrados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -430,6 +448,7 @@
                             <th>Vacías</th>
                             <th>Mortinatos</th>
                             <th>Porcentaje de Éxito</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -456,10 +475,18 @@
                                     <div class="progress-fill" style="width: {{ p.tasa_exito }}%;"></div>
                                 </div>
                             </td>
+                            <td>
+                                <form method="POST" action="/rendimiento/" style="display:inline;" onsubmit="return confirm('¿Deshabilitar el lote {{ p.lote_pajuela }}? (Permanecerá guardado en la base de datos)');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="accion" value="deshabilitar_pajuela">
+                                    <input type="hidden" name="pajuela_id" value="{{ p.id_pajuela }}">
+                                    <button type="submit" style="padding: 5px 10px; border-radius: 5px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid #e5b8b8; background: #fff; color: #b71c1c;">Deshabilitar</button>
+                                </form>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" style="text-align: center; color: var(--text-muted);">No hay lotes de pajuelas registrados.</td>
+                            <td colspan="9" style="text-align: center; color: var(--text-muted);">No hay lotes de pajuelas registrados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

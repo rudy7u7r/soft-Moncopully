@@ -133,6 +133,7 @@
                             <th>Lote Pajuela</th>
                             <th>Fecha de Servicio</th>
                             <th>Diagnóstico Gestación</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -158,10 +159,18 @@
                                     {% endif %}
                                 {% endwith %}
                             </td>
+                            <td>
+                                <form method="POST" action="/inseminacion/" style="display:inline;" onsubmit="return confirm('¿Deshabilitar el registro de inseminación #{{ inseminacion.id_inseminacion }}? (Quedará guardado en la base de datos)');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="accion" value="deshabilitar_inseminacion">
+                                    <input type="hidden" name="inseminacion_id" value="{{ inseminacion.id_inseminacion }}">
+                                    <button type="submit" style="padding: 5px 10px; border-radius: 5px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid #e5b8b8; background: #fff; color: #b71c1c;">Deshabilitar</button>
+                                </form>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" style="text-align: center; color: var(--text-muted);">No hay inseminaciones registradas.</td>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted);">No hay inseminaciones registradas.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

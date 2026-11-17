@@ -25,6 +25,7 @@ urlpatterns = [
     path('pajuelas/nueva/', views.nueva_pajuela, name='nueva_pajuela'),
     path('rendimiento/', views.rendimiento_genetico, name='rendimiento'),
     path('informes/', views.informes, name='informes'),
+    path('informes/ingreso-masivo/', views.ingreso_masivo_registros, name='ingreso_masivo_registros'),
     path('exportar/inseminaciones/', views.exportar_inseminaciones, name='exportar_inseminaciones'),
     path('exportar/alertas/', views.exportar_alertas, name='exportar_alertas'),
     path('exportar/inventario/', views.exportar_inventario, name='exportar_inventario'),
